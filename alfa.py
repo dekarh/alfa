@@ -18,7 +18,7 @@ OUR_PARTNERS = [45,191,234]
 # Коэффициент обрезки
 K_HIDDEN = 0.2
 # Дата начала обрезки
-DATE_HIDE = '2018-02-01'
+DATE_HIDE = '2018-01-29'
 # До какой даты ставить статус "Отрицательный результат"
 DATE_END_OTKAZ = '2017-12-31'
 
@@ -65,7 +65,7 @@ for i, all_file in enumerate(all_files):
 
         dbconn = MySQLConnection(**dbconfig)
         # считаем количество одобреных заявок в базе, кроме договоров агентов, которые не участвут в срезе
-        sql = 'SELECT count(*) FROM saturn_fin.alfabank_products WHERE inserted_date > %s AND status_code = 2' \
+        sql = 'SELECT count(*) FROM saturn_fin.alfabank_products WHERE inserted_date > %s AND status_code = 6' \
               ' AND (inserted_code NOT IN (SELECT code from saturn_fin.offices_staff WHERE partner_code = %s'
         partners = (DATE_HIDE, OUR_PARTNERS[0])
         for j, partner in enumerate(OUR_PARTNERS):
@@ -85,17 +85,16 @@ for i, all_file in enumerate(all_files):
         rows = cursor.fetchall()
         hidden_in_db = rows[0][0]
 
-        # заявки, без статусов: получил карту, отказ, отрицательный результат
+        # заявки, без статусов: одобрено, получил карту, отказ, отрицательный результат
         cursor = dbconn.cursor()
-        cursor.execute('SELECT t.returned_id, p.inserted_code FROM saturn_fin.alfabank_products AS p '
+        cursor.execute('SELECT t.returned_id, p.inserted_code, p.status_hidden FROM saturn_fin.alfabank_products AS p '
                        'LEFT JOIN saturn_fin.alfabank_transactions AS t ON p.id = t.product_id '
-                       'WHERE status_code != 3 AND status_code != 5 AND status_code != 6')
+                       'WHERE status_code != 2 AND status_code != 3 AND status_code != 5 AND status_code != 6')
         bids_in_db = cursor.fetchall()
         dbconn.close()
 
         print(datetime.now().strftime("%H:%M:%S"),'загружаем', all_file)
         updates = []
-        statuses = []
         wb = openpyxl.load_workbook(filename=all_file, read_only=True)
         sheet = wb[wb.sheetnames[0]]
         head = {}
@@ -140,37 +139,72 @@ for i, all_file in enumerate(all_files):
             try:
                 bid_in_xls = bids_in_xls[bid_in_db[0]]
                 bids_in_xls_db.append(bid_in_xls)
-                bids_in_db_agents.append(bid_in_db[1])
+                bids_in_db_agents.append([bid_in_db[1], bid_in_db[2]])
             except KeyError:
                 continue
             if bid_in_db[1] in our_agents:
                 q = 0
             else:
-                if bid_in_xls['status'] == 6 or bid_in_xls['status'] == 2:
+                if bid_in_xls['status'] == 2:
                     odobr_in_xls += 1
 
         hidden_in_xls = round((odobr_in_db + odobr_in_xls) * K_HIDDEN - hidden_in_db)
-        if hidden_in_xls < 0:
+        if hidden_in_xls > odobr_in_xls:
+            hidden_in_xls = odobr_in_xls
+        elif hidden_in_xls < 0:
             hidden_in_xls = 0
-        print('В файле', all_file, 'из', odobr_in_db + odobr_in_xls, 'одобренных будет скрыто', hidden_in_xls)
+        print('Скрытых в БД:', round(100*hidden_in_db/odobr_in_db), '%. В файле', all_file, 'из',
+              odobr_in_xls, 'одобренных будет скрыто', hidden_in_xls)
 
         statuses = []
         for j, bid_in_xls in enumerate(bids_in_xls_db):
-            if bids_in_db_agents[j] in our_agents:
+            if bids_in_db_agents[j][0] in our_agents:
                 statuses.append((bid_in_xls['status'], 0, bid_in_xls['remote_id']))
             else:
-                if (bid_in_xls['status'] == 2 or bid_in_xls['status'] == 6) and hidden_in_xls > 0:
+                if bid_in_xls['status'] == 2 and hidden_in_xls > 0:
                     hidden_in_xls -= 1
                     statuses.append((bid_in_xls['status'], 1, bid_in_xls['remote_id']))
+                elif bid_in_xls['status'] == 6:
+                    statuses.append((bid_in_xls['status'], bids_in_db_agents[j][1], bid_in_xls['remote_id']))
                 else:
                     statuses.append((bid_in_xls['status'], 0, bid_in_xls['remote_id']))
 
         gs =  0
         h_i = []
         for j, st in enumerate(statuses):
-            if st[1] == 1:
+            if st[0] == 2:
                 gs +=1
                 h_i.append(st[2])
+
+        dbconn = MySQLConnection(**dbconfig) # Обновляем статусы кроме 2,3,5,6
+        cursor = dbconn.cursor()
+        sql = 'UPDATE saturn_fin.alfabank_products AS p LEFT JOIN saturn_fin.alfabank_transactions AS t ' \
+              'ON p.id = t.product_id SET p.status_code = %s, p.status_hidden = %s WHERE t.returned_id = %s'
+        cursor.executemany(sql, statuses)
+        dbconn.commit()
+
+        # заявки только со статусом одобрено -------------------------------------------
+        cursor = dbconn.cursor()
+        cursor.execute('SELECT t.returned_id, p.inserted_code, p.status_hidden FROM saturn_fin.alfabank_products AS p '
+                       'LEFT JOIN saturn_fin.alfabank_transactions AS t ON p.id = t.product_id WHERE status_code = 2')
+        bids_in_db = cursor.fetchall()
+        dbconn.close()
+
+        statuses = []
+        for bid_in_db in bids_in_db:  # Проставляем на Предварительно одобренных статус Получил карту
+            try:
+                bid_in_xls = bids_in_xls[bid_in_db[0]]
+            except KeyError:
+                continue
+            if bid_in_xls['status'] == 6:
+                statuses.append((bid_in_xls['status'], bid_in_db[2], bid_in_xls['remote_id']))
+
+        dbconn = MySQLConnection(**dbconfig)
+        cursor = dbconn.cursor()
+        sql = 'UPDATE saturn_fin.alfabank_products AS p LEFT JOIN saturn_fin.alfabank_transactions AS t ' \
+              'ON p.id = t.product_id SET p.status_code = %s, p.status_hidden = %s WHERE t.returned_id = %s'
+        cursor.executemany(sql, statuses)
+        dbconn.commit()
 
         try:
             if all_file[:4] == '201':
@@ -181,12 +215,6 @@ for i, all_file in enumerate(all_files):
             if e.errno != OSError.errno.ENOENT:
                 print('Ошибка при переносе файла в ./loaded/', e)
 
-        dbconn = MySQLConnection(**dbconfig)
-        cursor = dbconn.cursor()
-        sql = 'UPDATE saturn_fin.alfabank_products AS p LEFT JOIN saturn_fin.alfabank_transactions AS t ' \
-              'ON p.id = t.product_id SET p.status_code = %s, p.status_hidden = %s WHERE t.returned_id = %s'
-        cursor.executemany(sql, statuses)
-        dbconn.commit()
 
 cursor = dbconn.cursor()
 cursor.execute('UPDATE saturn_fin.alfabank_products SET status_code = 5 WHERE status_code != 2 AND status_code != 3 '
