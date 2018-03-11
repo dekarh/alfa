@@ -55,6 +55,7 @@ cursor.execute(sql, partners)
 rows = cursor.fetchall()
 for row in rows:
     our_agents.append(row[0])
+another_agents = {}
 
 all_files = os.listdir(path=".")
 all_files.sort()
@@ -62,9 +63,8 @@ for i, all_file in enumerate(all_files):
     bids_in_xls = {}
 #    odobr_in_xls = 0
     if all_file.endswith(".xlsx"):
-
         dbconn = MySQLConnection(**dbconfig)
-        # считаем количество одобреных заявок в базе, кроме договоров агентов, которые не участвут в срезе
+# считаем количество одобреных заявок в базе, кроме договоров агентов, которые не участвут в срезе
         sql = 'SELECT count(*) FROM saturn_fin.alfabank_products WHERE inserted_date > %s AND status_code = 6' \
               ' AND (inserted_code NOT IN (SELECT code from saturn_fin.offices_staff WHERE partner_code = %s'
         partners = (DATE_HIDE, OUR_PARTNERS[0])
@@ -78,19 +78,27 @@ for i, all_file in enumerate(all_files):
         cursor.execute(sql, partners)
         rows = cursor.fetchall()
         odobr_in_db = rows[0][0]
-
-        # считаем количество скрытых заявок в базе
+# считаем количество скрытых заявок в базе
         cursor = dbconn.cursor()
         cursor.execute('SELECT count(*) FROM saturn_fin.alfabank_products WHERE status_hidden = 1')
         rows = cursor.fetchall()
         hidden_in_db = rows[0][0]
-
-        # заявки, без статусов: одобрено, получил карту, отказ, отрицательный результат
+# заявки, без статуса получил карту (исходим из того, что одобрено, отказ, отрицательный результат могут измениться)
         cursor = dbconn.cursor()
         cursor.execute('SELECT t.returned_id, p.inserted_code, p.status_hidden FROM saturn_fin.alfabank_products AS p '
                        'LEFT JOIN saturn_fin.alfabank_transactions AS t ON p.id = t.product_id '
-                       'WHERE status_code != 2 AND status_code != 3 AND status_code != 5 AND status_code != 6')
+                       'WHERE status_code != 6 ORDER BY inserted_date DESC')
         bids_in_db = cursor.fetchall()
+        dbconn.close()
+# создаем список не наших агентов с кол-вом получивших карту и скрытых
+        for bid_in_db in bids_in_db:
+            if (bid_in_db[1] not in another_agents) and (bid_in_db[1] not in our_agents):
+                cursor = dbconn.cursor()
+                cursor.execute('SELECT (SELECT count(*) FROM saturn_fin.alfabank_products WHERE status_hidden = 1 '
+                               'AND inserted_code = %s), (SELECT count(*) FROM saturn_fin.alfabank_products '
+                               'WHERE status_code = 6 AND inserted_code = %s)', (bid_in_db[1],bid_in_db[1]))
+                rows = cursor.fetchall()
+                another_agents[bid_in_db[1]] = [rows[0][1], rows[0][0]]
         dbconn.close()
 
         print(datetime.now().strftime("%H:%M:%S"),'загружаем', all_file)
@@ -162,13 +170,18 @@ for i, all_file in enumerate(all_files):
                 statuses.append((bid_in_xls['status'], 0, bid_in_xls['remote_id']))
             else:
                 if bid_in_xls['status'] == 2 and hidden_in_xls > 0:
-                    hidden_in_xls -= 1
-                    statuses.append((bid_in_xls['status'], 1, bid_in_xls['remote_id']))
+                    if another_agents[bids_in_db_agents[j]][0] > 9:
+                        k_hidden_in_agent = another_agents[bids_in_db_agents[j]][1] / another_agents[bids_in_db_agents[j]][0]
+                    else:
+                        k_hidden_in_agent = 1
+                    if k_hidden_in_agent < K_HIDDEN:
+                        hidden_in_xls -= 1
+                        statuses.append((bid_in_xls['status'], 1, bid_in_xls['remote_id']))
+                        another_agents[bids_in_db_agents[j]][1] += 1
                 elif bid_in_xls['status'] == 6:
                     statuses.append((bid_in_xls['status'], bids_in_db_agents[j][1], bid_in_xls['remote_id']))
                 else:
                     statuses.append((bid_in_xls['status'], 0, bid_in_xls['remote_id']))
-
         gs =  0
         h_i = []
         for j, st in enumerate(statuses):
