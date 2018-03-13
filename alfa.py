@@ -88,7 +88,7 @@ for i, all_file in enumerate(all_files):
         cursor.execute('SELECT t.returned_id, p.inserted_code, p.status_hidden FROM saturn_fin.alfabank_products AS p '
                        'LEFT JOIN saturn_fin.alfabank_transactions AS t ON p.id = t.product_id '
                        'WHERE status_code != 6 ORDER BY inserted_date DESC')
-        bids_in_db = cursor.fetchall()
+        bids_in_db = cursor.fetchall()              # bids_in_db[i][remote_id, inserted_code, status_hidden]
         dbconn.close()
 # создаем список не наших агентов с кол-вом получивших карту и скрытых
         for bid_in_db in bids_in_db:
@@ -147,7 +147,7 @@ for i, all_file in enumerate(all_files):
             try:
                 bid_in_xls = bids_in_xls[bid_in_db[0]]
                 bids_in_xls_db.append(bid_in_xls)
-                bids_in_db_agents.append([bid_in_db[1], bid_in_db[2]])
+                bids_in_db_agents.append([bid_in_db[1], bid_in_db[2]]) # bids_in_db_agents[i][inserted_code, status_hidden]
             except KeyError:
                 continue
             if bid_in_db[1] in our_agents:
@@ -161,7 +161,7 @@ for i, all_file in enumerate(all_files):
             hidden_in_xls = odobr_in_xls
         elif hidden_in_xls < 0:
             hidden_in_xls = 0
-        print('Скрытых в БД:', round(100*hidden_in_db/odobr_in_db), '%. В файле', all_file, 'из',
+        print('Скрытых в БД:', round(100*hidden_in_db/odobr_in_db, 2), '%. В файле', all_file, 'из',
               odobr_in_xls, 'одобренных будет скрыто', hidden_in_xls)
 
         statuses = []
@@ -169,15 +169,17 @@ for i, all_file in enumerate(all_files):
             if bids_in_db_agents[j][0] in our_agents:
                 statuses.append((bid_in_xls['status'], 0, bid_in_xls['remote_id']))
             else:
+                if bid_in_xls['status'] == 6:
+                    another_agents[bids_in_db_agents[j][0]][0] += 1
                 if bid_in_xls['status'] == 2 and hidden_in_xls > 0:
-                    if another_agents[bids_in_db_agents[j]][0] > 9:
-                        k_hidden_in_agent = another_agents[bids_in_db_agents[j]][1] / another_agents[bids_in_db_agents[j]][0]
+                    if another_agents[bids_in_db_agents[j][0]][0] > 9:
+                        k_hidden_in_agent = another_agents[bids_in_db_agents[j][0]][1]/another_agents[bids_in_db_agents[j][0]][0]
                     else:
                         k_hidden_in_agent = 1
-                    if k_hidden_in_agent < K_HIDDEN:
+                    if  k_hidden_in_agent < K_HIDDEN:
                         hidden_in_xls -= 1
                         statuses.append((bid_in_xls['status'], 1, bid_in_xls['remote_id']))
-                        another_agents[bids_in_db_agents[j]][1] += 1
+                        another_agents[bids_in_db_agents[j][0]][1] += 1
                 elif bid_in_xls['status'] == 6:
                     statuses.append((bid_in_xls['status'], bids_in_db_agents[j][1], bid_in_xls['remote_id']))
                 else:
