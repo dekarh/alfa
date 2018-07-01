@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Общая библиотека функций
-# ver 1.07
+# ver 1.10
 
 import string
 import re
@@ -34,7 +34,7 @@ def l(a):               # белиберду в цифры или 0
 def s(a):                   # белиберду в строку
     try:
         if a != None:
-            return str(a).strip().replace(u"\xa0", u" ")
+            return str(a).strip().replace(u"\xa0", u" ").replace('\n','')
         return ''
     except TypeError:
         return ''
@@ -69,7 +69,7 @@ def unique(lst):            # сделать список уникальным
                 seen = set()
                 break
             seen.add(x.lower())
-    return
+    return lst
 
 def filter_rus_sp(a):
     if not a:
@@ -122,6 +122,14 @@ def format_phone(tel):
             return int('78512' + tel)
         else:
             return None
+
+def fine_phone(t):
+    t = str(format_phone(t))
+    return '+' + t[0] + '(' + t[1:4] + ')' + t[4:7] + '-' + t[7:9] + '-' + t[9:]
+
+def fine_snils(t):
+    s = '{:=011d}'.format(l(t))
+    return s[:3]+'-'+s[3:6]+'-'+s[6:9]+' '+s[9:11]
 
 def read_config(filename='config.ini', section='mysql'):
     """ Read database configuration file and return a dictionary object
