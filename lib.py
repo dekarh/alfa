@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Общая библиотека функций
-# ver 1.10
+# ver 1.11
 
 import string
 import re
@@ -120,6 +120,11 @@ def format_phone(tel):
             return int('7' + tel)
         elif len(tel) == 6:
             return int('78512' + tel)
+        elif len(tel) == 5:
+            if tel[:1] == '2':
+                return int('7851231' + tel[1:])
+            if tel[:1] == '3':
+                return int('7851223' + tel[1:])
         else:
             return None
 
