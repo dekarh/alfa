@@ -14,18 +14,22 @@ from mysql.connector import MySQLConnection, Error
 
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
-from alfa_env import clicktity, inputtity, inputtity_first, selectity, select_selectity, gluk_w_point
+from alfa_env import orderity, clicktity, inputtity, inputtity_first, selectity, select_selectity, gluk_w_point
 
 import time
 
 # DRIVER_PATH = 'drivers/chromedriver.exe'
-#DRIVER_PATH = 'drivers/chromedriver'
+DRIVER_PATH = '/usr/lib/chromium-browser/chromedriver'
 
 
 def authorize(driver, login, password, authorize_page=''):
     if authorize_page != '':
         driver.get(authorize_page)
     # Ввод логина
+    elem = p(d=driver, f='p', **clicktity['Вход'])
+    elem.click()
+
+
     elem = driver.find_element_by_name("login")
     elem.send_keys(login)
 
@@ -56,7 +60,7 @@ def my_input2(driver, a, res, inp):
                 elem.click()
                 wj(driver)
 
-def my_input(driver, a, res, inp):
+def my_input(driver, a, res, inp):  # ввод по одной букве (там где подсказка выпадает) сделал через orderity['char-input':]
     for pole in a:
         if res[pole] != None:
             if res[pole] != '':
@@ -78,8 +82,6 @@ def my_input(driver, a, res, inp):
                 wj(driver)
 
 
-# driver = webdriver.Chrome(DRIVER_PATH)  # Инициализация драйвера
-#driver = webdriver.Firefox()  # Инициализация драйвера
 
 webconfig = read_config(filename='alfa.ini', section='web')
 fillconfig = read_config(filename='alfa.ini', section='fill')
@@ -88,21 +90,14 @@ dbconfig = read_config(filename='alfa.ini', section='SaturnFIN')
 conn = MySQLConnection(**dbconfig) # Открываем БД из конфиг-файла
 cursor = conn.cursor()
 
-## Формируем SQL по которому будем выгружать
+# Формируем SQL по которому будем выгружать
 sql = 'SELECT '
-for i, inp_i in enumerate(clicktity):
-    if str(type(clicktity[inp_i]['SQL']))=="<class 'str'>" and clicktity[inp_i]['SQL'] != '':
-        sql += clicktity[inp_i]['SQL'] + ','
+for i, order in enumerate(orderity):
+    if order.get('SQL'):
+        sql += order['SQL'] + ','
 
-for i, inp_i in enumerate(inputtity):
-    if str(type(inputtity[inp_i]['SQL']))=="<class 'str'>" and inputtity[inp_i]['SQL'] != '':
-        sql += inputtity[inp_i]['SQL'] + ','
-
-for i, sel_i in enumerate(selectity):
-    if selectity[sel_i]['SQL'] != '':
-        sql += selectity[sel_i]['SQL'] + ','
-
-sql = sql[:len(sql) - 1] + " FROM clients AS a INNER JOIN contracts AS b ON a.client_id=b.client_id WHERE b.status_code=0"
+# b.status_code=0 - условие выгрузки
+sql = sql[:-1] + " FROM alfabank_products WHERE status_code = 0"
 
 #sql = "SELECT banks.bank_id, banks.bank_name, banks.type_rasch, banks.per_day, banks.koef_185_fz, " \
 #      "gar_banks.delta, gar_banks.summ, gar_banks.perc_fz_44, gar_banks.min_fz_44 FROM gar_banks,banks" \
@@ -111,7 +106,6 @@ sql = sql[:len(sql) - 1] + " FROM clients AS a INNER JOIN contracts AS b ON a.cl
 #cursor.execute(sql, (delta.days, summ, delta.days, summ))
 cursor.execute(sql)
 rows = cursor.fetchall()
-conn.close()
 
 print('\n'+ datetime.datetime.now().strftime("%H:%M:%S") +' Скрипт выгрузки. Начинаем \n')
 
@@ -119,14 +113,63 @@ if len(rows) == 0:
     print('\n'+ datetime.datetime.now().strftime("%H:%M:%S") + ' Нет новых договоров. Работа скрипта окончена')
     sys.exit()
 
-driver = webdriver.Chrome()  # Инициализация драйвера
+#driver = webdriver.Firefox()  # Инициализация драйвера
+driver = webdriver.Chrome(DRIVER_PATH)  # Инициализация драйвера
 driver.implicitly_wait(10)
-authorize(driver, **webconfig)  # Авторизация
-driver.get(**fillconfig)  # Открытие страницы
-time.sleep(1)
-
+# authorize(driver, **webconfig)  # Авторизация
 
 for k, row in enumerate(rows):                    # Цикл по строкам таблицы (основной)
+    driver.get(**fillconfig)  # Открытие страницы заполнения
+    time.sleep(1)
+    for i, order in enumerate(orderity):
+        if order.get('check'):
+            data4send = {'t': 'x', 's': order['check']}
+            elem = p(d=driver, f='p', **data4send)
+            wj(driver)
+            if elem.get_attribute('value'):
+                continue
+        if order.get('pre-click'):
+            data4send = {'t': 'x', 's': order['pre-click']}
+            elem = p(d=driver, f='p', **data4send)
+            wj(driver)
+            elem.click()
+        if order.get('click'):
+            data4send = {'t': 'x', 's': order['click']}
+            elem = p(d=driver, f='p', **data4send)
+            wj(driver)
+            elem.click()
+        fromSQL = ''
+        if order.get('SQL'):
+            fromSQL = row[cursor.column_names.index(order['SQL'].strip('"'))]
+        if fromSQL and order.get('input'):
+            data4send = {'t': 'x', 's': order['input']}
+            elem = p(d=driver, f='p', **data4send)
+            wj(driver)
+            elem.send_keys(' ')
+            elem.clear()
+            elem.send_keys(' ')
+            elem.send_keys(fromSQL)
+            wj(driver)
+        if fromSQL and order.get('char-input'):
+            data4send = {'t': 'x', 's': order['char-input']}
+            elem = p(d=driver, f='c', **data4send)
+            wj(driver)
+            for char in s(fromSQL):
+                elem.send_keys(char)
+            wj(driver)
+        if str(fromSQL) != 'None' and str(order.get('select')) != 'None':
+            if len(order['select']) >= int(fromSQL):
+                data4send = {'t': 'x', 's': order['select'][int(fromSQL)]}
+                elem = p(d=driver, f='p', **data4send)
+                wj(driver)
+                elem.click()
+        if order.get('post-click'):
+            data4send = {'t': 'x', 's': order['post-click']}
+            elem = p(d=driver, f='p', **data4send)
+            wj(driver)
+            elem.click()
+
+
     j = 0
     res_cli = {}
     for i, inp_i in enumerate(clicktity):
@@ -535,6 +578,7 @@ for k, row in enumerate(rows):                    # Цикл по строкам
 
 
 driver.close()
+conn.close()
 print('\n'+ datetime.datetime.now().strftime("%H:%M:%S") + ' Работа скрипта окончена')
 
 

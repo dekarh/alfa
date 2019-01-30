@@ -1,7 +1,104 @@
 # -*- coding: utf-8 -*-
 # Общие переменые и процедуры проекта WebZagrTink
 
+# список очерёдности
+orderity = [
+    {'alfa': 'Фамилия', 'SQL': 'last_name', 'pre-click': '//SPAN[@class="input__top"][text()="Фамилия"]/..',
+     'input': '//INPUT[@class="input__control"][@name="lastName"]', 'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Имя', 'SQL': 'first_name', 'pre-click': '//SPAN[@class="input__top"][text()="Имя"]/..',
+     'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Отчество', 'SQL': 'middle_name', 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
+     'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Пол', 'SQL': 'gender', 'select': ['//SPAN[@class="tag-button__text"][text()="Мужской"]',
+            '//SPAN[@class="tag-button__text"][text()="Женский"]'], 'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Мобильный телефон', 'SQL': 'TRIM(LEADING "7" FROM `phone`)',
+     'pre-click': '//SPAN[@class="input__top"][text()="Мобильный телефон"]/..',
+     'input': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Электронная почта', 'SQL': 'e_mail', 'pre-click': '//SPAN[@class="input__top"][text()="Электронная почта"]/..',
+     'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//H3[text()="Персональные данные"]'},
+    # Нужно чтобы выдавал название региона точно как у них !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
+    {'alfa': 'Регион работы', 'SQL': '1', 'pre-click': '//SPAN[@class="input__top"][text()="Регион работы"]/..',
+     'click': '//SPAN[@class="menu-item__control"][text()="Москва"]/..', 'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    #------------------------------------------------ страница 2 ---------------------
+    {'alfa': 'Серия', 'SQL': 'p_seria', 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Номер', 'SQL': 'p_number', 'input': '//INPUT[@class="input__control"][@name="passportNumber"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Дата выдачи', 'SQL': 'DATE_FORMAT(p_date,"%d%m%Y")',
+     'pre-click': '//SPAN[@class="input__top"][text()="Дата выдачи"]/..',
+     'input': '//INPUT[@class="input__control"][@name="passportIssuedDate"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Код подразделения', 'SQL': 'p_police_code',
+     'pre-click': '//SPAN[@class="input__top"][text()="Код подразделения"]/..',
+     'input': '//INPUT[@class="input__control"][@name="passportIssuedCode"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Кем выдан', 'SQL': 'p_police',
+     'check': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
+     'pre-click': '//SPAN[@class="input__top"][text()="Кем выдан"]/..',
+     'input': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Дата рождения', 'SQL': 'DATE_FORMAT(birth_date,"%d%m%Y")',
+     'pre-click': '//SPAN[@class="input__top"][text()="Дата рождения"]/..',
+     'input': '//INPUT[@class="input__control"][@name="birthDate"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Место рождения', 'SQL': 'birth_address',
+     'pre-click': '//SPAN[@class="input__top"][text()="Место рождения"]/..',
+     'input': '//INPUT[@class="input__control"][@name="passportBirthPlace"]',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    # Нужно чтобы выдавал название региона точно как у них !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
+    {'alfa': 'Регион регистрации', 'SQL': '1', 'pre-click': '//SPAN[@class="input__top"][text()="Регион регистрации"]/..',
+     'click': '//SPAN[@class="menu-item__control"][text()="Москва"]/..',
+     'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    #------------------------------------------------ страница 3 ---------------------
+    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
+    {'alfa': 'Название организации', 'SQL': '"ООО Финфорт"',
+     'pre-click': '//SPAN[@class="input__top"][text()="Название организации"]/..',
+     'input': '//INPUT[@class="input__control"][@name="organizationName"]',
+     'post-click': '//H3[text()="Сведения о работе и образовании"]'},
+    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
+    {'alfa': 'ИНН организации', 'SQL': '"3025015445"',
+     'pre-click': '//SPAN[@class="input__top"][text()="ИНН организации"]/..',
+     'input': '//INPUT[@class="input__control"][@name="organizationInn"]',
+     'post-click': '//H3[text()="Сведения о работе и образовании"]'},
+    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
+    {'alfa': 'Должность', 'SQL': '"Начальник отдела"',
+     'pre-click': '//SPAN[@class="input__top"][text()="Должность"]/..',
+     'input': '//INPUT[@class="input__control"][@name="workPost"]',
+     'post-click': '//H3[text()="Сведения о работе и образовании"]'},
+    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
+    {'alfa': 'Рабочий телефон', 'SQL': '"9648810104"',
+     'pre-click': '//SPAN[@class="input__top"][text()="Рабочий телефон"]/..',
+     'input': '//INPUT[@class="input__control"][@name="workPhone"]',
+     'post-click': '//H3[text()="Сведения о работе и образовании"]'},
+    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
+    {'alfa': 'Размер заработной платы по основному месту работы', 'SQL': '"50000"',
+     'pre-click': '//SPAN[@class="input__top"][text()="Размер заработной платы по основному месту работы"]/..',
+     'input': '//INPUT[@class="input__control"][@name="mainIncome"]',
+     'post-click': '//H3[text()="Сведения о работе и образовании"]'},
+    # Нужно чтобы выдавал название образования точно как у них !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
+    {'alfa': 'Образование', 'SQL': '1', 'pre-click': '//SPAN[@class="select__top"][text()="Образование"]/..',
+     'click': '//SPAN[@class="menu-item__control"][text()="Высшее"]/..',
+     'post-click': '//H3[text()="Сведения о работе и образовании"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    # ------------------------------------------------ страница 4 ---------------------
+    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
+    {'alfa': 'Желаемый кредитный лимит', 'SQL': '"500000"',
+     'pre-click': '//SPAN[@class="input__top"][text()="Желаемый кредитный лимит"]/..',
+     'input': '//INPUT[@class="input__control"][@name="creditLimit"]',
+     'post-click': '//H3[text()="Какую сумму хотите?"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+
+    # ------------------------------------------------ страница 5 ---------------------
+
+]
+
+# поля, на которые надо кликать Название организации
 clicktity = {
+'Вход' : {'t': 'x', 's': '//DIV[@class="hh left"][text()="Вход"]' , 'SQL': "1"}, # Кнопка Вход
+'Фамилия' : {'t': 'x', 's': '//SPAN[@class="input__top"][text()="Фамилия"]/..' , 'SQL': "1"}, # Фамилия
+
 'cMob' : {'t': 'x', 's': '//[@class="mobile_verified"]' , 'SQL': "1"}, # Звонок на этот мобильный телефон (вычисляемое)
 'cIndREGAmn' : {'t': 'x', 's': '//[@class="amnesia_reg"]' , 'SQL': "IF(a.p_postalcode=0 OR a.p_postalcode=111111,1,0)"}, # Индекс =рег - не помню
 'cAddrFACTtoo' : {'t': 'x', 's': '//LABEL[@for="reg_addr_is_home_addr"]' , 'SQL': "0"}, #ok Адрес проживания такой же?
@@ -27,15 +124,17 @@ clicktity = {
 'Ошибки' : {'t': 'x', 's': '//DIV[@class="ui-form-field-error-message ui-form-field-error-message_ui-form"]', 'a':'text', 'SQL': "1"},
 }
 
-
+# поля, в которые надо вводить текст
 inputtity = {
-'iId' : {'t': 'x', 's': '//[@class="id"]', 'SQL': "a.client_id"}, # Поле id для update b.loaded
-'Фамилия' : {'t': 'x', 's': '//INPUT[@type="text"][@name="surname"]', 'SQL': "a.p_surname"}, # Фамилия
+'login-email' : {'t': 'x', 's': '//INPUT[@class="text-input1"]', 'SQL': "1"}, # Поле логина (используется e-mail)
+'Фамилия' : {'t': 'x', 's': '//INPUT[@class="input__control"][@name="lastName"]', 'SQL': "a.p_surname"}, # Фамилия
+
 'Имя' : {'t': 'x', 's': '//INPUT[@type="text"][@name="name"]', 'SQL': "a.p_name"}, # Имя
 'Отчество' : {'t': 'x', 's': '//INPUT[@type="text"][@name="patronymic"]', 'SQL': "a.p_lastname"}, # Отчество
 'МобТелефон' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="phone_mobile"]', 'SQL': "b.phone_personal_mobile"}, # Мобильный телефон
-'СНИЛС' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="social_security_no"]', 'SQL': "a.number"},
 'Email' : {'t': 'x', 's': '//INPUT[@type="text"][@name="email"]', 'SQL': "a.email"}, # Электронная почта
+'iId' : {'t': 'x', 's': '//[@class="id"]', 'SQL': "a.client_id"}, # Поле id для update b.loaded
+'СНИЛС' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="social_security_no"]', 'SQL': "a.number"},
 'СерияНомер' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="id_code_number"]' , 'SQL': "CONCAT_WS('',a.p_seria,a.p_number)"}, # Паспорт (номер и серия)
 'КемВыдан' : {'t': 'x', 's': '//TEXTAREA[@name="passport_who_given"]' , 'SQL': "a.p_police"}, # Кто выдал
 'ДатаВыдачи' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="passport_date_given"]' , 'SQL': "DATE_FORMAT(a.p_date,'%d%m%Y')"}, # Дата выдачи
@@ -115,10 +214,11 @@ inputtity = {
 'КвартПлата' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="expenses_amount"]' , 'SQL': "b.flat_payment"}, # Сумма аренды квартиры
 'ПлатежиПоКредитам' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="expenses_amount"]' , 'SQL': "b.banks_payment"}, # ССумма платежей по тек.кредитам в др.банках
 'КредЛимит' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="desired_credit_limit"]', 'SQL': "b.want_amount"}, # Кредитный лимит
-'ЩелчокДляСброса' : {'t': 'x', 's': '//DIV[@class="app-form-nav-container_static"]', 'SQL': "1"},
+'ЩелчокДляСброса' : {'t': 'x', 's': '//H3[text()="Персональные данные"]', 'SQL': "1"},
 #'СтацТелефон' : {'t': 'x', 's': '//[@class="phone_home"]' , 'SQL': "b.landline_phone-70000000000"}, # Стационарный телефон по месту проживания или регистрации
 }
 
+# поля, в которых надо выбирать из списка
 selectity = {
 'ТипЗанятости' : {'t': 'x', 's': '//SELECT[@name="employment_type"]/..', 'SQL': "employment_status_code"},
 'ТипНезанятости' : {'t': 'x', 's': "not_work", 'SQL': "unemployment_code"}, # Если не работаю то Кем ПРОВЕРИТЬ ИЗМЕНЕНИЯ !!!!!
@@ -151,6 +251,7 @@ selectity = {
 'ПрСправкуОДоходах' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[21]'   , 'SQL': "has_income_report"}, # Предоставит Справку о доходах
 }
 
+# то, что надо выбирать из списка
 select_selectity = {
 'ТипЗанятости' : [{'t': 'x', 's': '//SPAN[text()="Работаю в организации"]', 'txt': 'Работаю в организации'},
                   {'t': 'x', 's': '//SPAN[text()="Собственный бизнес"]', 'txt': 'Собственный бизнес'},
@@ -235,6 +336,7 @@ select_selectity = {
 'ПрСправкуОДоходах' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[21]'   , 'SQL': "has_income_report"}, # Предоставит Справку о доходах
 }
 
+# вначале выбираем эти
 inputtity_first = [
                    "addresstype_registered_postal_code", "addresstype_registered_place",
                    "addresstype_registered_area", "addresstype_registered_city",
