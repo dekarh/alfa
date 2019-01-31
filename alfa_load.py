@@ -118,7 +118,7 @@ driver = webdriver.Chrome(DRIVER_PATH)  # Инициализация драйв�
 driver.implicitly_wait(10)
 # authorize(driver, **webconfig)  # Авторизация
 
-for k, row in enumerate(rows):                    # Цикл по строкам таблицы (основной)
+for k, row in enumerate(rows):                    # Цикл по строкам таблицы (основной) check absence
     driver.get(**fillconfig)  # Открытие страницы заполнения
     time.sleep(1)
     for i, order in enumerate(orderity):
@@ -126,7 +126,24 @@ for k, row in enumerate(rows):                    # Цикл по строкам
             data4send = {'t': 'x', 's': order['check']}
             elem = p(d=driver, f='p', **data4send)
             wj(driver)
+            if not elem:
+                continue
             if elem.get_attribute('value'):
+                continue
+        if order.get('check-with-name'):
+            elems = driver.find_elements_by_xpath(order['check-with-name'])
+            wj(driver)
+            has_name = False
+            for elem in elems:
+                if elem.text.find(order['alfa']) > -1:
+                    has_name = True
+            if not has_name:
+                continue
+        if order.get('check-absence'):
+            data4send = {'t': 'x', 's': order['check-absence']}
+            elem = p(d=driver, f='p', **data4send)
+            wj(driver)
+            if elem:
                 continue
         if order.get('pre-click'):
             data4send = {'t': 'x', 's': order['pre-click']}
