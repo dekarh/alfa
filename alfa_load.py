@@ -46,7 +46,13 @@ def authorize(driver, login, password, authorize_page=''):
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % (body,))
     myjson = json.loads(bytes.decode(body))
-    print(" [x] Done", myjson)
+    for i, order in enumerate(orderity):
+        if order.get('SQL'):
+            fromSQL = myjson
+            for stepSQL in order['SQL']:
+                fromSQL = fromSQL[stepSQL]
+            print(order['SQL'], fromSQL)
+    print(" [x] Done")
     ch.basic_ack(delivery_tag = method.delivery_tag)
 
 webconfig = read_config(filename='alfa.ini', section='web')

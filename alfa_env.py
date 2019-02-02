@@ -3,137 +3,134 @@
 
 # список очерёдности
 orderity = [
-    {'alfa': 'Фамилия', 'SQL': 'last_name', 'pre-click': '//SPAN[@class="input__top"][text()="Фамилия"]/..',
+    {'alfa': 'Фамилия', 'SQL': ['content', 'passport_lastname'], 'pre-click': '//SPAN[@class="input__top"][text()="Фамилия"]/..',
      'input': '//INPUT[@class="input__control"][@name="lastName"]', 'post-click': '//H3[text()="Персональные данные"]'},
-    {'alfa': 'Имя', 'SQL': 'first_name', 'pre-click': '//SPAN[@class="input__top"][text()="Имя"]/..',
+    {'alfa': 'Имя', 'SQL': ['content', 'passport_name'], 'pre-click': '//SPAN[@class="input__top"][text()="Имя"]/..',
      'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//H3[text()="Персональные данные"]'},
-    {'alfa': 'Отчество', 'SQL': 'middle_name', 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
+    {'alfa': 'Отчество', 'SQL': ['content', 'passport_middlename'], 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
      'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//H3[text()="Персональные данные"]'},
-    {'alfa': 'Пол', 'SQL': 'gender', 'select': ['//SPAN[@class="tag-button__text"][text()="Мужской"]',
-            '//SPAN[@class="tag-button__text"][text()="Женский"]'], 'post-click': '//H3[text()="Персональные данные"]'},
-    {'alfa': 'Мобильный телефон', 'SQL': 'TRIM(LEADING "7" FROM `phone`)',
+#--------------------Нет этого поля----------------------------------------------------------------------------------------
+    {'alfa': 'Пол', #'SQL': 'gender',
+     'select': ['//SPAN[@class="tag-button__text"][text()="Мужской"]',
+                '//SPAN[@class="tag-button__text"][text()="Женский"]'],
+     'post-click': '//H3[text()="Персональные данные"]'},
+# --------------------------------------------------------------------------------------------------------------------------
+    {'alfa': 'Мобильный телефон', 'SQL': ['content', 'personal_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Мобильный телефон"]/..',
      'input': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H3[text()="Персональные данные"]'},
-    {'alfa': 'Электронная почта', 'SQL': 'e_mail', 'pre-click': '//SPAN[@class="input__top"][text()="Электронная почта"]/..',
+    {'alfa': 'Электронная почта', 'SQL': ['content', 'e_mail'], 'pre-click': '//SPAN[@class="input__top"][text()="Электронная почта"]/..',
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//H3[text()="Персональные данные"]'},
-    # Нужно чтобы выдавал название региона точно как у них !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
-    {'alfa': 'Регион работы', 'SQL': '1', 'pre-click': '//SPAN[@class="input__top"][text()="Регион работы"]/..',
+#-----------------Поменять в форме Текущий регион -> Регион работы----------------------------------------------------------
+    {'alfa': 'Регион работы', 'SQL': ['content', 'current_address_region'], 'pre-click': '//SPAN[@class="input__top"][text()="Регион работы"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="Москва"]/..', 'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
     #------------------------------------------------ страница 2 ---------------------
-    {'alfa': 'Серия', 'SQL': 'p_seria', 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
+    {'alfa': 'Серия', 'SQL': ['content', 'passport_seria'], 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Номер', 'SQL': 'p_number', 'input': '//INPUT[@class="input__control"][@name="passportNumber"]',
+    {'alfa': 'Номер', 'SQL': ['content', 'passport_number'], 'input': '//INPUT[@class="input__control"][@name="passportNumber"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Дата выдачи', 'SQL': 'DATE_FORMAT(p_date,"%d%m%Y")',
+    {'alfa': 'Дата выдачи', 'SQL': ['content', 'passport_date'],
      'pre-click': '//SPAN[@class="input__top"][text()="Дата выдачи"]/..',
      'input': '//INPUT[@class="input__control"][@name="passportIssuedDate"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Код подразделения', 'SQL': 'p_police_code',
+    {'alfa': 'Код подразделения', 'SQL': ['content', 'passport_police_code'],
      'pre-click': '//SPAN[@class="input__top"][text()="Код подразделения"]/..',
      'input': '//INPUT[@class="input__control"][@name="passportIssuedCode"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Кем выдан', 'SQL': 'p_police',
+    {'alfa': 'Кем выдан', 'SQL': ['content', 'passport_police'],
      'check': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'pre-click': '//SPAN[@class="input__top"][text()="Кем выдан"]/..',
      'input': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Дата рождения', 'SQL': 'DATE_FORMAT(birth_date,"%d%m%Y")',
+    {'alfa': 'Дата рождения', 'SQL': ['content', 'birth_date'],
      'pre-click': '//SPAN[@class="input__top"][text()="Дата рождения"]/..',
      'input': '//INPUT[@class="input__control"][@name="birthDate"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Место рождения', 'SQL': 'birth_address',
+    {'alfa': 'Место рождения', 'SQL': ['content', 'passport_birth_address'],
      'pre-click': '//SPAN[@class="input__top"][text()="Место рождения"]/..',
      'input': '//INPUT[@class="input__control"][@name="passportBirthPlace"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    # Нужно чтобы выдавал название региона точно как у них !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
-    {'alfa': 'Регион регистрации', 'SQL': '1', 'pre-click': '//SPAN[@class="input__top"][text()="Регион регистрации"]/..',
+    {'alfa': 'Регион регистрации', 'SQL': ['content', 'registration_region_code'],
+     'pre-click': '//SPAN[@class="input__top"][text()="Регион регистрации"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="Москва"]/..',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
     #------------------------------------------------ страница 3 ---------------------
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Название организации', 'SQL': '"ООО Финфорт"',
+    {'alfa': 'Название организации', 'SQL': ['content', 'work', 'organization'],
      'pre-click': '//SPAN[@class="input__top"][text()="Название организации"]/..',
      'input': '//INPUT[@class="input__control"][@name="organizationName"]',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'ИНН организации', 'SQL': '"3025015445"',
+    {'alfa': 'ИНН организации', 'SQL': ['content', 'work', 'organization_inn'],
      'pre-click': '//SPAN[@class="input__top"][text()="ИНН организации"]/..',
      'input': '//INPUT[@class="input__control"][@name="organizationInn"]',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Должность', 'SQL': '"Начальник отдела"',
+    {'alfa': 'Должность', 'SQL': ['content', 'work', 'position'],
      'pre-click': '//SPAN[@class="input__top"][text()="Должность"]/..',
      'input': '//INPUT[@class="input__control"][@name="workPost"]',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Рабочий телефон', 'SQL': '"9648810104"',
+    {'alfa': 'Рабочий телефон', 'SQL': ['content', 'work', 'contact_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Рабочий телефон"]/..',
      'input': '//INPUT[@class="input__control"][@name="workPhone"]',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Размер заработной платы по основному месту работы', 'SQL': '"50000"',
+    {'alfa': 'Размер заработной платы по основному месту работы', 'SQL': ['content', 'work', 'salary'],
      'pre-click': '//SPAN[@class="input__top"][text()="Размер заработной платы по основному месту работы"]/..',
      'input': '//INPUT[@class="input__control"][@name="mainIncome"]',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
-    # Нужно чтобы выдавал название образования точно как у них !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
-    {'alfa': 'Образование', 'SQL': '1', 'pre-click': '//SPAN[@class="select__top"][text()="Образование"]/..',
+    {'alfa': 'Образование', 'SQL': ['content', 'education'],
+     'pre-click': '//SPAN[@class="select__top"][text()="Образование"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="Высшее"]/..',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
     # ------------------------------------------------ страница 4 ---------------------
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Желаемый кредитный лимит', 'SQL': '"500000"',
+    {'alfa': 'Желаемый кредитный лимит', 'SQL': ['content', 'credit_limit'],
      'pre-click': '//SPAN[@class="input__top"][text()="Желаемый кредитный лимит"]/..',
      'input': '//INPUT[@class="input__control"][@name="creditLimit"]',
      'post-click': '//H3[text()="Какую сумму хотите?"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Второй документ, удостоверяющий личность', 'SQL': '"11"',
+# --------------------Нет этого поля----------------------------------------------------------------------------------------
+    {'alfa': 'Второй документ, удостоверяющий личность', #'SQL': ['content', ],
      'check-with-name': '//SPAN[@class="select__top"][text()="Второй документ, удостоверяющий личность"]/../../../../..'
                       '//DIV[@class="part part_theme_alfa-on-white"]',
      'pre-click': '//SPAN[@class="select__top"][text()="Второй документ, удостоверяющий личность"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="СНИЛС (Страховое свидетельство пенсионного фонда)"]/..',
      'post-click': '//H3[text()="Какую сумму хотите?"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Документ, подтверждающий доход', 'SQL': '"12"',
+#---------------------------------------------------------------------------------------------------------------------------
+# --------------------Нет этого поля----------------------------------------------------------------------------------------
+    {'alfa': 'Документ, подтверждающий доход', #'SQL': ['content', ],
      'check-with-name': '//SPAN[@class="select__top"][text()="Документ, подтверждающий доход"]/../../../../..'
                       '//DIV[@class="part part_theme_alfa-on-white"]',
      'pre-click': '//SPAN[@class="select__top"][text()="Документ, подтверждающий доход"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="Не могу предоставить"]/..',
      'post-click': '//H3[text()="Какую сумму хотите?"]'},
+# ---------------------------------------------------------------------------------------------------------------------------
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
     # ------------------------------------------------ страница 5 ---------------------
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Фамилия контактного лица', 'SQL': '"ГАПОН"',
+    {'alfa': 'Фамилия контактного лица', 'SQL': ['content', 'reference_lastname'],
      'pre-click': '//SPAN[@class="input__top"][text()="Фамилия контактного лица"]/..',
      'input': '//INPUT[@class="input__control"][@name="contactLastName"]',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Имя контактного лица', 'SQL': '"ДМИТРИЙ"',
+    {'alfa': 'Имя контактного лица', 'SQL': ['content', 'reference_name'],
      'pre-click': '//SPAN[@class="input__top"][text()="Имя контактного лица"]/..',
      'input': '//INPUT[@class="input__control"][@name="contactFirstName"]',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Отчество контактного лица', 'SQL': '"ЕВГЕНЬЕВИЧ"',
+    {'alfa': 'Отчество контактного лица', 'SQL': ['content', 'reference_middlename'],
      'pre-click': '//SPAN[@class="input__top"][text()="Отчество контактного лица"]/..',
      'input': '//INPUT[@class="input__control"][@name="contactMiddleName"]',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Моб. телефон контактного лица', 'SQL': '"9270781725"',
+    {'alfa': 'Моб. телефон контактного лица', 'SQL': ['content', 'reference_contact_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Моб. телефон контактного лица"]/..',
      'input': '//INPUT[@class="input__control"][@name="contactMobilePhone"]',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
-    # нет таких полей в SQL !!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!!!!!!!
-    {'alfa': 'Кодовое слово', 'SQL': '"GAP0N"',
+    {'alfa': 'Кодовое слово', 'SQL': ['content', 'secret_word'],
      'pre-click': '//SPAN[@class="input__top"][text()="Кодовое слово"]/..',
      'input': '//INPUT[@class="input__control"][@name="codeWord"]',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
+# --------------------Нет этого поля----------------------------------------------------------------------------------------
     # Столица области или региона Как ее получить????? !!!!!!!!!!!!!!!!!! ДОДЕЛАТЬ !!!!!!!!!
-    {'alfa': 'Город получения карты', 'SQL': '"Москва"',
+    {'alfa': 'Город получения карты', #'SQL': ['content', ],
      'pre-click': '//SPAN[@class="input__top"][text()="Город получения карты"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="Москва"]/..',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
+#---------------------------------------------------------------------------------------------------------------------------
     # ------------------------------------------------ Отправить заявку ---------------------
     #{'alfa': 'Отправить заявку', 'click': '//SPAN[@class="button__text"][text()="Отправить заявку"]'},
 
