@@ -77,6 +77,7 @@ aloader = os.path.join(os.path.dirname(__file__), "./aloader.py")
 outs = {}
 errs = {}
 procs = {}
+chs = {}
 
 
 rabbituser = read_config(filename='alfa.ini', section='RabbitUser')
