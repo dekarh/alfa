@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-# Общие переменые и процедуры проекта WebZagrTink
+# Общие переменые и процедуры проекта alfa
+
+# DRIVER_PATH = 'drivers/chromedriver.exe'
+DRIVER_PATH = '/usr/lib/chromium-browser/chromedriver'
+LOG_FILE = 'rabbit_transfer.log'
+BAD_TRANSACTION_LOG_FILE = 'rabbit_bad_transactions.log'
+
 
 # список очерёдности
 orderity = [

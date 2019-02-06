@@ -23,9 +23,6 @@ import sys
 from random import uniform
 from lib import unique
 
-# DRIVER_PATH = 'drivers/chromedriver.exe'
-#DRIVER_PATH = 'drivers/chromedriver'
-
 def wr():
     time.sleep(uniform(0.5, 5))
 
