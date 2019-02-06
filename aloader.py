@@ -7,6 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
 import os, sys
+import json
 
 from alfa_env import DRIVER_PATH, LOG_FILE, BAD_TRANSACTION_LOG_FILE, orderity
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
@@ -16,7 +17,7 @@ webconfig = read_config(filename='alfa.ini', section='web')
 fillconfig = read_config(filename='alfa.ini', section='fill')
 pid = os.getpid()
 
-myjson = sys.stdin.readline().rstrip()
+myjson = json.loads(bytes.decode(sys.stdin.readline().rstrip()))
 
 driver = webdriver.Chrome(DRIVER_PATH)  # Инициализация драйвера
 driver.implicitly_wait(10)
@@ -99,7 +100,6 @@ try:
             wj(driver)
             elem.click()
     q=0
-    ch.basic_ack(delivery_tag = method.delivery_tag)
 except Exception as e:
     bad_transaction_log = open(BAD_TRANSACTION_LOG_FILE, 'a')
     bad_transaction_log.write('(' + str(pid) + ')' + datetime.datetime.now().strftime("%H:%M:%S") + ': ' + str(myjson) + ' * * * ' + str(e.args) + '\n')

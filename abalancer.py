@@ -23,8 +23,10 @@ def callback(ch, method, properties, body):
             procs.pop(proc)
             outs.pop(proc)
             errs.pop(proc)
+            chs[proc].basic_ack(delivery_tag=method.delivery_tag)
+            chs.pop(proc)
 
-    aid = ajson['aid']
+    aid = ajson['click_id']
     # запускаем/удаляем aloader или посылаем запрос СМС или вносим цифры СМС
     if ajson['type'] == 'new': # !!!!!!!!!!!!!!!!!!!!
         if aid in procs.values():
@@ -36,11 +38,13 @@ def callback(ch, method, properties, body):
                     procs.pop(proc)
                     outs.pop(proc)
                     errs.pop(proc)
+                    chs.pop(proc)
             procs[aid] = subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             procs[aid].stdin.write(body.encode("utf8") + b"\n")
             out, err = procs[aid].communicate()
             outs[aid] = out
             errs[aid] = err
+            chs[aid] = ch
         else:
             # создаем новый aloader
             procs[aid] = subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -48,29 +52,23 @@ def callback(ch, method, properties, body):
             out, err = procs[aid].communicate()
             outs[aid] = out
             errs[aid] = err
+            chs[aid] = ch
     elif ajson['type'] == 'order SMS': # !!!!!!!!!!!!!!!!!!!!
         if aid in procs.values():
             # есть такой aloader - посылаем запрос СМС
             procs[aid].stdin.write('ORDER'.encode("utf8") + b"\n")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
         else:
-            # нет такого aloader'а - создаем новый aloader
-            procs[aid] =  subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            procs[aid].stdin.write(body.encode("utf8") + b"\n")
-            out, err = procs[aid].communicate()
-            outs[aid] = out
-            errs[aid] = err
+            # нет такого aloader'а - ошибка - нужен новый aloader
+            q=0 # !!!!!!!!!!!!!!!!!!!!
     elif ajson['type'] == 'SMS': # !!!!!!!!!!!!!!!!!!!!
         if aid in procs.values():
             # есть такой aloader - посылаем результат из СМС !!!!!!!!!!!!! ИСПРАВИТЬ ajson['SMS'].strip()[:4]
             procs[aid].stdin.write(('SMS  ' + ajson['SMS'].strip()[:4]).encode("utf8") + b"\n")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
         else:
-            # нет такого aloader'а - создаем новый aloader
-            procs[aid] =  subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            procs[aid].stdin.write(body.encode("utf8") + b"\n")
-            out, err = procs[aid].communicate()
-            outs[aid] = out
-            errs[aid] = err
-
+            # нет такого aloader'а - ошибка - нужен новый aloader
+            q=0 # !!!!!!!!!!!!!!!!!!!!
 
 aloader = os.path.join(os.path.dirname(__file__), "./aloader.py")
 
@@ -88,11 +86,11 @@ parameters = pika.ConnectionParameters(credentials=credentials, **rabbiturl)
 connection = pika.BlockingConnection(parameters=parameters)
 channel = connection.channel()
 
-channel.queue_declare(queue='messages', durable=True)
+channel.queue_declare(queue='alfabank_100', durable=True)
 print(' [*] Waiting for messages. To exit press CTRL+C')
 
 channel.basic_qos(prefetch_count=1)
-channel.basic_consume(callback, queue='messages')
+channel.basic_consume(callback, queue='alfabank_100')
 
 channel.start_consuming()
 
