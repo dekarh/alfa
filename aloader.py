@@ -7,9 +7,11 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
 import os, sys
+from datetime import datetime
 import json
+import requests
 
-from alfa_env import DRIVER_PATH, LOG_FILE, BAD_TRANSACTION_LOG_FILE, orderity
+from alfa_env import DRIVER_PATH, LOG_FILE, BAD_TRANSACTION_LOG_FILE, LOG_PATH, orderity
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
 
@@ -17,13 +19,18 @@ webconfig = read_config(filename='alfa.ini', section='web')
 fillconfig = read_config(filename='alfa.ini', section='fill')
 pid = os.getpid()
 
-myjson = json.loads(bytes.decode(sys.stdin.readline().rstrip()))
+ajson = json.loads(sys.stdin.readline().rstrip())
 
-driver = webdriver.Chrome(DRIVER_PATH)  # Инициализация драйвера
+driver = webdriver.Chrome(DRIVER_PATH)
 driver.implicitly_wait(10)
+bad_log = open(LOG_PATH + BAD_TRANSACTION_LOG_FILE, 'a')
+log = open(LOG_PATH + LOG_FILE, 'a')
 
 try:
-    driver.get(**fillconfig)  # Открытие страницы заполнения
+    driver.get(**fillconfig)
+    # Начинаем заполнять
+    log.write(ajson['click_id'] + '(' + str(pid) + ')' + datetime.now().strftime("%d-%H:%M:%S") +
+              ': Начинаем заполнять' + '\n')
     for i, order in enumerate(orderity):
         if order.get('check'):
             data4send = {'t': 'x', 's': order['check']}
@@ -59,7 +66,7 @@ try:
             wj(driver)
             elem.click()
         if order.get('SQL'):            # "Разворачиваем" любой уровень вложенности json
-            fromSQL = myjson
+            fromSQL = ajson
             for stepSQL in order['SQL']:
                 fromSQL = fromSQL[stepSQL]
         if fromSQL and order.get('input'):
@@ -101,13 +108,23 @@ try:
             elem.click()
     q=0
 except Exception as e:
-    bad_transaction_log = open(BAD_TRANSACTION_LOG_FILE, 'a')
-    bad_transaction_log.write('(' + str(pid) + ')' + datetime.datetime.now().strftime("%H:%M:%S") + ': ' + str(myjson) + ' * * * ' + str(e.args) + '\n')
-    driver.close()
-    bad_transaction_log.close()
+    stamp = ajson['click_id'] + '(' + str(pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+    bad_log.write(stamp + ': ' + str(ajson) + '\n * * * \n' + str(e.args) + '\n')
+    html_log = open(LOG_PATH + stamp + '.html', 'w')
+    html_elem = driver.find_element_by_xpath('//HTML')
+    html_log.write(html_elem.get_attribute('innerHTML'))
+    html_log.close()
+    driver.save_screenshot(LOG_PATH + stamp + '.png')
+    log.write(stamp + ': Ошибка - см. лог ошибок, скриншот, файл html')
 else:
-    log = open(LOG_FILE, 'a')
-    log.write('(' + str(pid) + ')' + datetime.datetime.now().strftime("%H:%M:%S") + ': ' + str(myjson) + '\n')
-    driver.close()
-    log.close()
+    log.write(ajson['click_id'] + '(' + str(pid) + ')' + datetime.now().strftime("%d-%H:%M:%S") +
+              ': Ожидание СМС' + '\n')
+
+
+
+
+
+driver.close()
+bad_log.close()
+log.close()
 

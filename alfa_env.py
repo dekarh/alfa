@@ -3,8 +3,10 @@
 
 # DRIVER_PATH = 'drivers/chromedriver.exe'
 DRIVER_PATH = '/usr/lib/chromium-browser/chromedriver'
+LOG_PATH = 'logs/'
 LOG_FILE = 'rabbit_transfer.log'
 BAD_TRANSACTION_LOG_FILE = 'rabbit_bad_transactions.log'
+MAX_PROCESSES = 10
 
 
 # список очерёдности

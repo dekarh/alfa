@@ -3,11 +3,11 @@
 
 
 import sys, os, subprocess
-import datetime
+from datetime import datetime
 from mysql.connector import MySQLConnection, Error
 
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
-from alfa_env import orderity, clicktity, inputtity, inputtity_first, selectity, select_selectity, gluk_w_point
+from alfa_env import LOG_FILE, BAD_TRANSACTION_LOG_FILE, LOG_PATH, MAX_PROCESSES
 
 import pika
 import time
@@ -15,32 +15,46 @@ import json
 
 def callback(ch, method, properties, body):
     # принимаем json из рэббита
-    print(" [x] Received %r" % (body,))
     ajson = json.loads(bytes.decode(body))
+    aid = ajson['click_id']
+    ajson['type'] = 'NEW'       # !!!!!!!!!!!!!!!!!!!!
+    if ajson['type'] == 'NEW':  # !!!!!!!!!!!!!!!!!!!!
+        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Новая заявка' + '\n')
+    elif ajson['type'][:3] == 'SMS':  # !!!!!!!!!!!!!!!!!!!!
+        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': СМС от банка' + '\n')
+    elif ajson['type'] == 'ORDER':  # !!!!!!!!!!!!!!!!!!!!
+        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Запрос СМС' + '\n')
+    elif ajson['type'] == 'REFRESH':  # !!!!!!!!!!!!!!!!!!!!
+        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ": Обновление списка aloader'ов" + '\n')
+
     # удаляем завершенные aloader'ы из procs
     for proc in procs:
-        if procs[proc].returncode == 0:
+        if procs[proc].returncode != None:
             procs.pop(proc)
             outs.pop(proc)
             errs.pop(proc)
             chs[proc].basic_ack(delivery_tag=method.delivery_tag)
             chs.pop(proc)
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Завершен - удаляем' + '\n')
 
-    aid = ajson['click_id']
     # запускаем/удаляем aloader или посылаем запрос СМС или вносим цифры СМС
-    if ajson['type'] == 'new': # !!!!!!!!!!!!!!!!!!!!
+    if ajson['type'] == 'NEW':  # !!!!!!!!!!!!!!!!!!!!
+        if len(procs) > MAX_PROCESSES:
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Система перегружена' + '\n')
+            return
         if aid in procs.values():
             # есть такой aloader - удаляем и создаем новый aloader
-            procs[aid].stdin.write('DIE'.encode("utf8") + b"\n")
-            time.sleep(1)
-            for proc in procs:
-                if procs[proc].returncode == 0:
-                    procs.pop(proc)
-                    outs.pop(proc)
-                    errs.pop(proc)
-                    chs.pop(proc)
+            old = procs[aid].pid
+            procs[aid].kill()
+            procs.pop(aid)
+            outs.pop(aid)
+            errs.pop(aid)
+            chs.pop(aid)
             procs[aid] = subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            procs[aid].stdin.write(body.encode("utf8") + b"\n")
+            procs[aid].stdin.write(bytes.decode(body) + b"\n")
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") +
+                      ': Запрос на создание, а такой aloader уже есть - удаляем ' + str(old) + ' и создаем новый' +
+                      str(procs[aid].pid) + '\n')
             out, err = procs[aid].communicate()
             outs[aid] = out
             errs[aid] = err
@@ -48,29 +62,42 @@ def callback(ch, method, properties, body):
         else:
             # создаем новый aloader
             procs[aid] = subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            procs[aid].stdin.write(body.encode("utf8") + b"\n")
+            procs[aid].stdin.write(body + b"\n")
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Создаем новый aloader' +
+                      str(procs[aid].pid) + '\n')
             out, err = procs[aid].communicate()
             outs[aid] = out
             errs[aid] = err
             chs[aid] = ch
-    elif ajson['type'] == 'order SMS': # !!!!!!!!!!!!!!!!!!!!
+    elif ajson['type'] == 'ORDER': # !!!!!!!!!!!!!!!!!!!!
         if aid in procs.values():
             # есть такой aloader - посылаем запрос СМС
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") +
+                      ': Есть такой aloader - посылаем запрос СМС' + '\n')
             procs[aid].stdin.write('ORDER'.encode("utf8") + b"\n")
             ch.basic_ack(delivery_tag=method.delivery_tag)
         else:
-            # нет такого aloader'а - ошибка - нужен новый aloader
-            q=0 # !!!!!!!!!!!!!!!!!!!!
-    elif ajson['type'] == 'SMS': # !!!!!!!!!!!!!!!!!!!!
+            # Невозможно ввести SMS, нет такого aloader'а
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") +
+                      ": Невозможно ввести SMS, нет такого aloader'а" + '\n')
+    elif ajson['type'][:3] == 'SMS': # !!!!!!!!!!!!!!!!!!!!
         if aid in procs.values():
-            # есть такой aloader - посылаем результат из СМС !!!!!!!!!!!!! ИСПРАВИТЬ ajson['SMS'].strip()[:4]
+            # есть такой aloader - посылаем результат из СМС
+            # !!!!!!!!!!!!! ИСПРАВИТЬ ajson['SMS'].strip()[:4]
             procs[aid].stdin.write(('SMS  ' + ajson['SMS'].strip()[:4]).encode("utf8") + b"\n")
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") +
+                      ': Есть такой aloader - посылаем цифры из СМС' + '\n')
             ch.basic_ack(delivery_tag=method.delivery_tag)
         else:
             # нет такого aloader'а - ошибка - нужен новый aloader
+            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") +
+                      ": нет такого aloader'а - ошибка - нужен новый aloader" + '\n')
+
             q=0 # !!!!!!!!!!!!!!!!!!!!
 
 aloader = os.path.join(os.path.dirname(__file__), "./aloader.py")
+log = open(LOG_PATH + LOG_FILE,'a')
+bad_log = open(LOG_PATH + BAD_TRANSACTION_LOG_FILE,'a')
 
 outs = {}
 errs = {}
@@ -92,12 +119,13 @@ print(' [*] Waiting for messages. To exit press CTRL+C')
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(callback, queue='alfabank_100')
 
-channel.start_consuming()
-
-
-
-
-
+try:
+    channel.start_consuming()
+except BaseException:
+    pass
+finally:
+    bad_log.close()
+    log.close()
 
 q="""
 def authorize(driver, login, password, authorize_page=''):
