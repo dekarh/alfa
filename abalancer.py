@@ -4,7 +4,6 @@
 
 import sys, os, subprocess
 from datetime import datetime
-from mysql.connector import MySQLConnection, Error
 
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from alfa_env import LOG_FILE, BAD_TRANSACTION_LOG_FILE, LOG_PATH, MAX_PROCESSES
@@ -13,29 +12,52 @@ import pika
 import time
 import json
 
+def writelog(file, click_id, message, pid=0, date_time=datetime.now()):
+    if not pid:
+        pid_str = ' NONE '
+    elif pid == 1:
+        pid_str = ' MAIN '
+    else:
+        pid_str = str(pid)
+    file.write(click_id + '(' + pid_str + ') ' + date_time.strftime("%d-%H:%M:%S") + ' :' + message + '\n')
+
 def callback(ch, method, properties, body):
     # принимаем json из рэббита
     ajson = json.loads(bytes.decode(body))
+    print(str(ajson))
     aid = ajson['click_id']
     ajson['type'] = 'NEW'       # !!!!!!!!!!!!!!!!!!!!
     if ajson['type'] == 'NEW':  # !!!!!!!!!!!!!!!!!!!!
-        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Новая заявка' + '\n')
+        writelog(log, aid, 'Поступила новая заявка', 1)
     elif ajson['type'][:3] == 'SMS':  # !!!!!!!!!!!!!!!!!!!!
-        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': СМС от банка' + '\n')
+        writelog(log, aid, 'Поступило СМС от банка', 1)
     elif ajson['type'] == 'ORDER':  # !!!!!!!!!!!!!!!!!!!!
-        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Запрос СМС' + '\n')
+        writelog(log, aid, 'Поступил запрос на СМС от банка', 1)
     elif ajson['type'] == 'REFRESH':  # !!!!!!!!!!!!!!!!!!!!
-        log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ": Обновление списка aloader'ов" + '\n')
+        writelog(log, aid, "Поступил запрос на обновление списка aloader'ов", 1)
+    elif ajson['type'] == 'KILL':  # !!!!!!!!!!!!!!!!!!!!
+        writelog(log, aid, "Поступил запрос на закрытие aloader'а", 1)
+
+    if ajson['type'] == 'KILL':  # !!!!!!!!!!!!!!!!!!!!
+        if aid in procs.values():
+            old = procs[aid].pid
+            procs[aid].kill()
+            procs.pop(aid)
+            outs.pop(aid)
+            errs.pop(aid)
+            chs.pop(aid)
+            writelog(log, aid, str(old) + ' - убит', 1)
 
     # удаляем завершенные aloader'ы из procs
     for proc in procs:
         if procs[proc].returncode != None:
+            old = procs[aid].pid
             procs.pop(proc)
             outs.pop(proc)
             errs.pop(proc)
             chs[proc].basic_ack(delivery_tag=method.delivery_tag)
             chs.pop(proc)
-            log.write(aid + '( MAIN )' + datetime.now().strftime("%d-%H:%M:%S") + ': Завершен - удаляем' + '\n')
+            writelog(log, aid, str(old) + 'Завершен - удаляем', 1)
 
     # запускаем/удаляем aloader или посылаем запрос СМС или вносим цифры СМС
     if ajson['type'] == 'NEW':  # !!!!!!!!!!!!!!!!!!!!

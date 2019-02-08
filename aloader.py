@@ -27,10 +27,11 @@ bad_log = open(LOG_PATH + BAD_TRANSACTION_LOG_FILE, 'a')
 log = open(LOG_PATH + LOG_FILE, 'a')
 
 try:
-    driver.get(**fillconfig)
+    link = ajson['__landing_url'] + '&afclick=' + ajson['click_id']
+    driver.get(url=link)
     # Начинаем заполнять
     log.write(ajson['click_id'] + '(' + str(pid) + ')' + datetime.now().strftime("%d-%H:%M:%S") +
-              ': Начинаем заполнять' + '\n')
+              ': Начинаем заполнять по ссылке' + link + '\n')
     for i, order in enumerate(orderity):
         if order.get('check'):
             data4send = {'t': 'x', 's': order['check']}

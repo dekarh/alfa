@@ -17,9 +17,9 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Отчество', 'SQL': ['passport_middlename'], 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
      'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//H3[text()="Персональные данные"]'},
-#    {'alfa': 'Пол', 'SQL': ['gender'],
-#     'click-text': '//SPAN[@class="tag-button__text"][text()="',
-#     'post-click': '//H3[text()="Персональные данные"]'},
+    {'alfa': 'Пол', 'SQL': ['gender'],
+     'click-text': '//SPAN[@class="tag-button__text"][text()="',
+     'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Мобильный телефон', 'SQL': ['personal_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Мобильный телефон"]/..',
      'input': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H3[text()="Персональные данные"]'},
@@ -133,8 +133,6 @@ orderity = [
                                                      #//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..
     {'alfa': 'Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)', 'click': '//SPAN[@class="checkbox__text"][text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]/..'},
 #'allow_night_calls'
-#'__landing_url'
-#'click_id' = 'd068f29b-dcc8-4da7-a24c-faaa9ea239f5'
 #'delivery_time' = 'Через 1-3 дня (С фамилией и именем на карте)'
     # ------------------------------------------------ Отправить заявку ---------------------
     #{'alfa': 'Отправить заявку', 'click': '//SPAN[@class="button__text"][text()="Отправить заявку"]'},
