@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 # Общие переменые и процедуры проекта alfa
 
+import json, requests
+from datetime import datetime
+
 # DRIVER_PATH = 'drivers/chromedriver.exe'
 DRIVER_PATH = '/usr/lib/chromium-browser/chromedriver'
 LOG_PATH = 'logs/'
 LOG_FILE = 'rabbit_transfer.log'
 BAD_TRANSACTION_LOG_FILE = 'rabbit_bad_transactions.log'
 MAX_PROCESSES = 10
-
+CYCLES_ORDERITY = 5 # Количество попыток заполнения заявки
+ALOADER_TIMEOUT = 15 # минут - время жизни aloader'а после заполнения заявки
 
 # список очерёдности
 orderity = [
@@ -17,12 +21,12 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Отчество', 'SQL': ['passport_middlename'], 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
      'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//H3[text()="Персональные данные"]'},
-    {'alfa': 'Пол', 'SQL': ['gender'],
-     'click-text': '//SPAN[@class="tag-button__text"][text()="',
-     'post-click': '//H3[text()="Персональные данные"]'},
+#    {'alfa': 'Пол', 'SQL': ['gender'],
+#     'click-text': '//SPAN[@class="tag-button__text"][text()="',
+#     'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Мобильный телефон', 'SQL': ['personal_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Мобильный телефон"]/..',
-     'input': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H3[text()="Персональные данные"]'},
+     'input-tel': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Электронная почта', 'SQL': ['e_mail'], 'pre-click': '//SPAN[@class="input__top"][text()="Электронная почта"]/..',
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//H3[text()="Персональные данные"]'},
     {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//SPAN[@class="input__top"][text()="Регион работы"]/..',
@@ -41,12 +45,12 @@ orderity = [
      'pre-click': '//SPAN[@class="input__top"][text()="Код подразделения"]/..',
      'input': '//INPUT[@class="input__control"][@name="passportIssuedCode"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Кем выдан', 'SQL': ['passport_police'],
+    {'alfa': 'Кем выдан', 'SQL': ['passport_police'], 'post-wait': 1,
      'check': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'pre-click': '//SPAN[@class="input__top"][text()="Кем выдан"]/..',
      'input': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
-    {'alfa': 'Дата рождения', 'SQL': ['birth_date'],
+    {'alfa': 'Дата рождения', 'SQL': ['birth_date'],'pre-wait': 1, 'post-wait': 1,
      'pre-click': '//SPAN[@class="input__top"][text()="Дата рождения"]/..',
      'input': '//INPUT[@class="input__control"][@name="birthDate"]',
      'post-click': '//H3[text()="Паспортные данные гражданина РФ"]'},
@@ -74,7 +78,7 @@ orderity = [
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
     {'alfa': 'Рабочий телефон', 'SQL': ['work_contact_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Рабочий телефон"]/..',
-     'input': '//INPUT[@class="input__control"][@name="workPhone"]',
+     'input-tel': '//INPUT[@class="input__control"][@name="workPhone"]',
      'post-click': '//H3[text()="Сведения о работе и образовании"]'},
     {'alfa': 'Размер заработной платы по основному месту работы', 'SQL': ['work_salary'],
      'pre-click': '//SPAN[@class="input__top"][text()="Размер заработной платы по основному месту работы"]/..',
@@ -118,7 +122,7 @@ orderity = [
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
     {'alfa': 'Моб. телефон контактного лица', 'SQL': ['reference_contact_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Моб. телефон контактного лица"]/..',
-     'input': '//INPUT[@class="input__control"][@name="contactMobilePhone"]',
+     'input-tel': '//INPUT[@class="input__control"][@name="contactMobilePhone"]',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
     {'alfa': 'Кодовое слово', 'SQL': ['secret_word'],
      'pre-click': '//SPAN[@class="input__top"][text()="Кодовое слово"]/..',
@@ -129,15 +133,24 @@ orderity = [
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
      'post-click': '//H3[text()="Данные контактного лица (не супруга)"]'},
     {'alfa': 'Выберите город и способ получения карты', 'click': '//SPAN[@class="title"][text()="Курьером бесплатно"]/..'},
-    {'alfa': 'Как быстро вам нужна карта?', 'click': '//SPAN[@class="radio__title"][text()="Сегодня"]/..'},
-                                                     #//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..
-    {'alfa': 'Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)', 'click': '//SPAN[@class="checkbox__text"][text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]/..'},
-#'allow_night_calls'
-#'delivery_time' = 'Через 1-3 дня (С фамилией и именем на карте)'
+    {'alfa': 'Как быстро вам нужна карта?', 'SQL': ['delivery_time'],
+     'radio-select': ['//SPAN[@class="radio__title"][text()="Сегодня"]/..',
+                      '//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..'],
+     'radio-select-input': ['Сегодня (Без фамилии и имени на карте)', 'Через 1-3 дня (С фамилией и именем на карте)']},
+    {'alfa': 'Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)', 'SQL': ['allow_night_calls'], 'pre-wait': 1,
+     'checkbox': '//SPAN[@class="checkbox__text"][text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]/../..'},
     # ------------------------------------------------ Отправить заявку ---------------------
-    #{'alfa': 'Отправить заявку', 'click': '//SPAN[@class="button__text"][text()="Отправить заявку"]'},
+    {'alfa': 'Отправить заявку', 'click': '//SPAN[@class="button__text"][text()="Отправить заявку"]', 'post-wait': 60},
 
 ]
+smsity = {
+    'Изменить номер телефона': '//SPAN[@class="button__text"][text()="Изменить номер телефона"]',
+    'Ждет СМС': '//P[@class="paragraph paragraph_theme_alfa-on-white confirmation__text"][contains(text(),"сек")]',
+    'Ждет запроса на СМС': '//SPAN[@class="button__text"][text()="Запросить пароль повторно"]',
+    'Запросить пароль повторно': '//SPAN[@class="button__text"][text()="Запросить пароль повторно"]/../..',
+    'Ввести СМС': '//SPAN[@class="input input_type_tel input_size_m input_theme_alfa-on-white autosubmit-input '
+                  'autosubmit-input_theme_alfa-on-white confirmation-modal__input"]//INPUT[@class="input__control"]'
+}
 
 # поля, на которые надо кликать Отправить заявку
 clicktity = {
@@ -169,237 +182,35 @@ clicktity = {
 'Ошибки' : {'t': 'x', 's': '//DIV[@class="ui-form-field-error-message ui-form-field-error-message_ui-form"]', 'a':'text', 'SQL': "1"},
 }
 
-# поля, в которые надо вводить текст
-inputtity = {
-'login-email' : {'t': 'x', 's': '//INPUT[@class="text-input1"]', 'SQL': "1"}, # Поле логина (используется e-mail)
-'Фамилия' : {'t': 'x', 's': '//INPUT[@class="input__control"][@name="lastName"]', 'SQL': "a.p_surname"}, # Фамилия
+def writelog(file, click_id, message, pid=0, date_time=datetime.now()):
+    if not pid:
+        pid_str = ' NONE '
+    elif pid == 1:
+        pid_str = ' MAIN '
+    else:
+        pid_str = str(pid)
+    file.write(click_id + '(' + pid_str + ') ' + date_time.strftime("%d-%H:%M:%S") + '>' + message + '\n')
 
-'Имя' : {'t': 'x', 's': '//INPUT[@type="text"][@name="name"]', 'SQL': "a.p_name"}, # Имя
-'Отчество' : {'t': 'x', 's': '//INPUT[@type="text"][@name="patronymic"]', 'SQL': "a.p_lastname"}, # Отчество
-'МобТелефон' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="phone_mobile"]', 'SQL': "b.phone_personal_mobile"}, # Мобильный телефон
-'Email' : {'t': 'x', 's': '//INPUT[@type="text"][@name="email"]', 'SQL': "a.email"}, # Электронная почта
-'iId' : {'t': 'x', 's': '//[@class="id"]', 'SQL': "a.client_id"}, # Поле id для update b.loaded
-'СНИЛС' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="social_security_no"]', 'SQL': "a.number"},
-'СерияНомер' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="id_code_number"]' , 'SQL': "CONCAT_WS('',a.p_seria,a.p_number)"}, # Паспорт (номер и серия)
-'КемВыдан' : {'t': 'x', 's': '//TEXTAREA[@name="passport_who_given"]' , 'SQL': "a.p_police"}, # Кто выдал
-'ДатаВыдачи' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="passport_date_given"]' , 'SQL': "DATE_FORMAT(a.p_date,'%d%m%Y')"}, # Дата выдачи
-'КодПодразд' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="id_division_code"]' , 'SQL': "a.p_police_code"}, # Код подразделения
-'ДатаРождения' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="birthdate"]' , 'SQL': "DATE_FORMAT(a.b_date,'%d%m%Y')"}, # Дата рождения
-'МестоРождения' : {'t': 'x', 's': '//INPUT[@type="text"][@name="place_of_birth"]'
-              , 'SQL': "CONCAT_WS(' ', a.b_country,a.b_region,a.b_district,a.b_place)"}, # Место рождения
-'МаркаАвто' : {'t': 'x', 's': '//INPUT[@type="text"][@name="car_producer"]' , 'SQL': "b.car_brand"},
-'МодельАвто' : {'t': 'x', 's': '//INPUT[@type="text"][@name="car_model"]' , 'SQL': "b.car_model"},
-'ДатаКАСКОАвто' : {'t': 'x', 's': '//INPUT[@type="text"][@name="car_model"]' , 'SQL': "DATE_FORMAT(b.car_insurance_expiration_date,'%d%m%Y')"},
-
-'ИндексФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="tel"][@name="postal_code"]', 'SQL': "a.d_postalcode"}, # Индекс =факт
-'РегионФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="place"]' ,
-                'SQL': "CONCAT_WS(' ',a.d_region,a.d_region_type)"}, # Регион =факт
-'РегионФАКТзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="place"]', 'a':'value', 'SQL': "1"},
-'РайонФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="area"]' ,
-                    'SQL': "CONCAT_WS(' ',a.d_district_type,a.d_district)"}, # Район =факт
-'ГородФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="area"]' ,
-                    'SQL': "CONCAT_WS(' ',a.d_place_type,a.d_place)"}, # Город =факт
-'НасПунктФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="city"]',
-                 'SQL': "CONCAT_WS(' ',a.d_subplace_type,a.d_subplace)"}, # Населенный пункт =факт
-'РайонФАКТзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="area"]' , 'a':'value', 'SQL': "1"},
-'НасПунктФАКТзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="city"]', 'a': 'value', 'SQL': "1"},
-'УлицаФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="street"]',
-              'SQL': "CONCAT_WS(' ',a.d_street_type,a.d_street)"},
-'УлицаФАКТзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="street"]', 'a': 'value', 'SQL': "1"},
-'ДомФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="building"]', 'SQL': "a.d_building"}, # Дом =факт
-'КорпусФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="corpus"]' , 'SQL': "a.d_corpus"}, # Корпус =факт
-'СтроениеФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="stroenie"]', 'SQL': ""}, # Строение =факт
-'КвартираФАКТ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][2]//INPUT[@type="text"][@name="flat"]', 'SQL': "a.d_flat"}, # Квартира =факт
-'ИндексРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="tel"][@name="postal_code"]', 'SQL': "a.p_postalcode"}, # Индекс =рег
-'РегионРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="place"]',
-               'SQL': "CONCAT_WS(' ',a.p_region,a.p_region_type)"}, # Регион =рег
-'РегионРЕГзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="place"]', 'a': 'value', 'SQL': "1" }, # Регион =рег
-'РайонРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="area"]',
-                    'SQL': "CONCAT_WS(' ',a.p_district_type,a.p_district)"}, # Район =рег
-'ГородРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="area"]',
-                    'SQL': "CONCAT_WS(' ',a.p_place_type,a.p_place)"}, # Город =рег
-'НасПунктРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="city"]',
-                 'SQL': "CONCAT_WS(' ',a.p_subplace_type,a.p_subplace)"}, # Населенный пункт =рег
-'РайонРЕГзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="area"]', 'a': 'value', 'SQL': "1" },
-'НасПунктРЕГзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="city"]', 'a': 'value', 'SQL': "1"},
-'УлицаРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="street"]',
-              'SQL': "CONCAT_WS(' ',a.p_street_type,a.p_street)"}, # Улица =рег
-'УлицаРЕГзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="street"]', 'a': 'value', 'SQL': "1"},
-'ДомРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="building"]', 'SQL': "a.p_building"}, # Дом =рег
-'КорпусРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="corpus"]' , 'SQL': "a.p_corpus"}, # Корпус =рег
-'СтроениеРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="stroenie"]' , 'SQL': ""}, # Строение =рег
-'КвартираРЕГ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][1]//INPUT[@type="text"][@name="flat"]' , 'SQL': "a.p_flat"}, # Квартира =рег
-'ДопТелефон' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="additional_phone_home"]', 'SQL': "b.additional_phone"}, # Дополнительный телефон
-'ИмяДопТелефон' : {'t': 'x', 's': '//INPUT[@type="text"][@name="additional_phone_home_comment"]',
-                   'SQL': "b.additional_phone_person"},
-'НазвФирмы' : {'t': 'x', 's': '//TEXTAREA[@name="work_name"]' , 'SQL': "b.employment_organization"}, # Наименование организации
-'НазвДолжности' : {'t': 'x', 's': '//INPUT[@name="work_position_text"]' , 'SQL': "b.employment_position"}, # Название должности !!!!!ПОКА НЕТ!!!!
-'ТелефонРАБ' : {'t': 'x', 's': '//INPUT[@name="phone_work"]' , 'SQL': "b.employment_phone"}, # Рабочий телефон
-'ИндексРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="tel"][@name="postal_code"]', 'SQL': "b.w_postalcode"}, # Индекс =раб
-'РегионРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="place"]' ,
-               'SQL': "CONCAT_WS(' ',b.w_region,b.w_region_type)"}, # Регион =раб
-'РегионРАБзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="place"]', 'a': 'value', 'SQL': "1"},
-'РайонРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="area"]' ,
-                    'SQL': "CONCAT_WS(' ',b.w_district_type,b.w_district)"}, # Район =раб
-'РайонРАБзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="area"]', 'a': 'value', 'SQL': "1"},
-'ГородРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="area"]' ,
-                    'SQL': "CONCAT_WS(' ',b.w_place_type,b.w_place)"}, # Город =раб
-'НасПунктРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="city"]' ,
-                 'SQL': "CONCAT_WS(' ',b.w_subplace_type,b.w_subplace)"}, # Населенный пункт =раб
-'НасПунктРАБзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="city"]', 'a': 'value', 'SQL': "1"},
-'УлицаРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="street"]' ,
-              'SQL': "CONCAT_WS(' ',b.w_street_type,b.w_street)"}, # Улица =раб
-'УлицаРАБзнач' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="street"]', 'a': 'value', 'SQL': "1"},
-'ДомРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="building"]' , 'SQL': "b.w_building"}, # Дом =раб
-'КорпусРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="corpus"]' , 'SQL': "b.w_corpus"}, # Корпус =раб
-'СтроениеРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="stroenie"]' , 'SQL': ""}, # Строение =раб
-'НомОфисаРАБ' : {'t': 'x', 's': '//DIV[@class="ui-kladr"][3]//INPUT[@type="text"][@name="flat"]' , 'SQL': "b.w_flat"}, # Номер офиса =раб
-'НеРаботаю-Другое' : {'t': 'x', 's': '//INPUT[@name="notwork_other_text"]' , 'SQL': "b.unemployment_other"}, # Не работаю - другое
-'ПерсДоход' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="income_individual"]' , 'SQL': "b.personal_income"}, # Персональный доход
-'КвартПлата' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="expenses_amount"]' , 'SQL': "b.flat_payment"}, # Сумма аренды квартиры
-'ПлатежиПоКредитам' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="expenses_amount"]' , 'SQL': "b.banks_payment"}, # ССумма платежей по тек.кредитам в др.банках
-'КредЛимит' : {'t': 'x', 's': '//INPUT[@type="tel"][@name="desired_credit_limit"]', 'SQL': "b.want_amount"}, # Кредитный лимит
-'ЩелчокДляСброса' : {'t': 'x', 's': '//H3[text()="Персональные данные"]', 'SQL': "1"},
-#'СтацТелефон' : {'t': 'x', 's': '//[@class="phone_home"]' , 'SQL': "b.landline_phone-70000000000"}, # Стационарный телефон по месту проживания или регистрации
-}
-
-# поля, в которых надо выбирать из списка
-selectity = {
-'ТипЗанятости' : {'t': 'x', 's': '//SELECT[@name="employment_type"]/..', 'SQL': "employment_status_code"},
-'ТипНезанятости' : {'t': 'x', 's': "not_work", 'SQL': "unemployment_code"}, # Если не работаю то Кем ПРОВЕРИТЬ ИЗМЕНЕНИЯ !!!!!
-'Должность' : {'t': 'x', 's': '//SPAN[text()="Тип должности"]', 'SQL': "b.employment_position_code"}, # Если работаю то Должность
-'Стаж' : {'t': 'x', 's': '//SPAN[text()="Стаж работы в организации"]/../../..' , 'SQL': "b.employment_experience"}, # Стаж работы (тип)
-'ВладелецДопТелефона' : {'t': 'x', 's': '//SELECT[@name="additional_phone_home_type"]/..',
-                         'SQL': "b.additional_phone_owner"},
-'ПлатежиКредитные' : {'t': 'x', 's': '//SELECT[@name="liability_n_w_amount__dbl"]/..' , 'SQL': "b.current_payments_code"},
-'КредитнаяИстория' : {'t': 'x', 's': '//SELECT[@name="credit_history"]/..', 'SQL': "b.status_credit_history_code"}, # Какая кредитная история
-'Образование' : {'t': 'x', 's': '//SELECT[@name="education"]/..'    , 'SQL': "b.status_education_code"}, # Образование
-'СемейноеПоложение' : {'t': 'x', 's': '//SELECT[@name="marital_status"]/..', 'SQL': "b.status_marital_code"}, # Семейное положение
-'Автомобиль' : {'t': 'x', 's': '//SELECT[@name="asset_foreign_vehicle_flag"]/..', 'SQL': "b.status_car_code"}, # Автомобиль
-'ГодАвто' : {'t': 'x', 's': '//SPAN[text()="Год выпуска"]/../../../..' , 'SQL': "b.car_production_year"},
-'ЧастоЗагран' : {'t': 'x', 's': '//SELECT[@name="visit_foreign_country_frequency"]/..' , 'SQL': "b.travel_information_code"},
-
-#'ПрПолисКАСКО' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[16]'   , 'SQL': "auto_kasko_attachment_id"}, # Полис страхования КАСКО
-#'ПрСНИЛС' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[18]'   , 'SQL': "number_attachment_id"}, # Предоставит СНИЛС
-'ПрЗагранпаспорт' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[10]'   , 'SQL': "international_passport_attachment_id"}, # Предоставит Загранпаспорт
-'СкДетей' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[3]'    , 'SQL': "status_childs_code"}, # Количество детей
-'ПросрочкиПоКредитам' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[8]'    , 'SQL': "status_credit_delay_code"}, # Просрочки по текущим кредитам
-'ПрВодительскоеУд' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[9]'    , 'SQL': "driver_card_attachment_id"}, # Предоставит вод.удостоверение
-'ПрПенсионноеУд' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[11]'   , 'SQL': "pensioner_card_attachment_id"}, # Предоставит Пенс.удостоверение
-'ПрУдОфицера' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[12]'   , 'SQL': "identity_card_mvd_attachment_id"}, # Предоставит Удост.офицера МВД
-'ПрВоенныйБилет' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[13]'   , 'SQL': "military_card_attachment_id"}, # Предоставит Военный билет
-'ПрСвРегТС' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[14]'   , 'SQL': "auto_reg_attachment_id"}, # Cвидетельство регистрации ТС
-'ПрОригПТС' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[15]'   , 'SQL': "auto_pts_attachment_id"}, # Оригинал ПТС
-'ПрПолисОСАГО' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[17]'   , 'SQL': "auto_osago_attachment_id"}, # Полис ОСАГО
-'ПрИНН' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[19]'   , 'SQL': "inn_attachment_id"}, # Предоставит ИНН
-'Пр2НДФЛ' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[20]'   , 'SQL': "has_2NDFL"}, # Предоставит 2 НДФЛ
-'ПрСправкуОДоходах' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[21]'   , 'SQL': "has_income_report"}, # Предоставит Справку о доходах
-}
-
-# то, что надо выбирать из списка
-select_selectity = {
-'ТипЗанятости' : [{'t': 'x', 's': '//SPAN[text()="Работаю в организации"]', 'txt': 'Работаю в организации'},
-                  {'t': 'x', 's': '//SPAN[text()="Собственный бизнес"]', 'txt': 'Собственный бизнес'},
-                  {'t': 'x', 's': '//SPAN[text()="Не работаю"]', 'txt': 'Не работаю'}],
-#'ТипЗанятости' : [{'t': 'x', 's': '//UL[@class="ui-select__slider ui-select__slider_open"]'
-#                                  '//SPAN[text()="Работаю в организации"]', 'txt': 'Работаю в организации'},
-#                  {'t': 'x', 's': '//UL[@class="ui-select__slider ui-select__slider_open"]'
-#                                  '//SPAN[text()="Собственный бизнес"]', 'txt': 'Собственный бизнес'},
-#                  {'t': 'x', 's': '//UL[@class="ui-select__slider ui-select__slider_open"]'
-#                                  '//SPAN[text()="Не работаю"]', 'txt': 'Не работаю'}],
-'ТипНезанятости' : [{'t': 'x', 's': '//DIV[text()="По возрасту/стажу работы"]', 'txt': 'По возрасту/стажу работы'}, # Если не работаю то почему
-                    {'t': 'x', 's': '//DIV[text()="По инвалидности"]', 'txt': 'По инвалидности'},
-                    {'t': 'x', 's': '//DIV[text()="Ищу работу"]', 'txt': 'Ищу работу'},
-                    {'t': 'x', 's': '//DIV[text()="Содержит муж/жена"]', 'txt': 'Содержит муж/жена'},
-                    {'t': 'x', 's': '//DIV[text()="Другое"]', 'txt': 'Другое'}],
-'Должность' : [{'t': 'x', 's': '//SELECT[@name="work_position"]/../..//SPAN[text()="Генеральный директор"]',
-                'txt': 'Генеральный директор'},
-               {'t': 'x', 's': '//SELECT[@name="work_position"]/../..//SPAN[text()="Руководитель"]',
-                'txt': 'Руководитель'},
-               {'t': 'x', 's': '//SELECT[@name="work_position"]/../..//SPAN[text()="Специалист"]',
-                'txt': 'Специалист'},
-               {'t': 'x', 's': '//SELECT[@name="work_position"]/../..//SPAN[text()="Обсл. персонал"]',
-                'txt': 'Обсл. персонал'},
-               {'t': 'x', 's': '//SELECT[@name="work_position"]/../..//SPAN[text()="Рабочий"]',
-                'txt': 'Рабочий'}],
-'Стаж' : [{'t': 'x', 's': '//SPAN[text()="6 месяцев и меньше"]', 'txt': '6 месяцев и меньше'},
-          {'t': 'x', 's': '//SPAN[text()="0,5-3 года"]', 'txt': '0,5-3 года'},
-          {'t': 'x', 's': '//SPAN[text()="3-5 лет"]', 'txt': '3-5 лет'},
-          {'t': 'x', 's': '//SPAN[text()="5-7 лет"]', 'txt': '5-7 лет'},
-          {'t': 'x', 's': '//SPAN[text()="7 и более лет"]', 'txt': '7 и более лет'},],
-'ВладелецДопТелефона' : [{'t': 'x', 's': '//SPAN[text()="Мой номер"]','txt':'Мой номер'},
-                         {'t': 'x', 's': '//SPAN[text()="Номер родственника"]', 'txt': 'Номер родственника'},
-                         {'t': 'x', 's': '//SPAN[text()="Номер друга"]', 'txt': 'Номер друга'},],
-'ПлатежиКредитные' : [{'t': 'x', 's': '//SPAN[text()="Нет других кредитов"]', 'txt': 'Нет других кредитов'},
-                      {'t': 'x', 's': '//SPAN[text()="Нет других кредитов"]', 'txt': 'Нет других кредитов'},
-                      {'t': 'x', 's': '//SPAN[text()="Менее 10% дохода"]', 'txt': 'Менее 10% дохода'},
-                      {'t': 'x', 's': '//SPAN[text()="От 10% до 25% дохода"]', 'txt': 'От 10% до 25% дохода'},
-                      {'t': 'x', 's': '//SPAN[text()="От 25% до 50% дохода"]', 'txt': 'От 25% до 50% дохода'},
-                      {'t': 'x', 's': '//SPAN[text()="Более 50% дохода"]', 'txt': 'Более 50% дохода'},],
-'КредитнаяИстория' : [{'t': 'x', 's': '//SPAN[text()="Всегда плачу вовремя"]', 'txt': 'Всегда плачу вовремя'},
-                      {'t': 'x', 's': '//SPAN[text()="Всегда плачу вовремя"]', 'txt': 'Всегда плачу вовремя'},
-                      {'t': 'x', 's': '//SPAN[text()="Бывают просрочки"]', 'txt': 'Бывают просрочки'},
-                      {'t': 'x', 's': '//SPAN[text()="Было много просрочек"]', 'txt': 'Было много просрочек'},
-                      {'t': 'x', 's': '//SPAN[text()="Есть текущие просрочки"]', 'txt': 'Есть текущие просрочки'},
-                      {'t': 'x', 's': '//SPAN[text()="Не было кредитов"]', 'txt': 'Не было кредитов'},
-                      {'t': 'x', 's': '//SPAN[text()="Не знаю"]', 'txt': 'Не знаю'},], # Какая кредитная история
-'Образование' : [{'t': 'x', 's': '//SPAN[text()="Начальное, среднее"]', 'txt': 'Не указано'},
-                 {'t': 'x', 's': '//SPAN[text()="Начальное, среднее"]', 'txt': 'Начальное, среднее'},
-                 {'t': 'x', 's': '//SPAN[text()="Неполное высшее"]', 'txt': 'Неполное высшее'},
-                 {'t': 'x', 's': '//SPAN[text()="Высшее"]', 'txt': 'Высшее'},
-                 {'t': 'x', 's': '//SPAN[text()="Второе высшее"]', 'txt': 'Второе высшее'},
-                 {'t': 'x', 's': '//SPAN[text()="Ученая степень"]', 'txt': 'Ученая степень'},], # Образование
-'СемейноеПоложение' : [{'t': 'x', 's': '//SPAN[text()="Холост/не замужем"]', 'txt': 'Не выбрано'},
-                       {'t': 'x', 's': '//SPAN[text()="Холост/не замужем"]', 'txt': 'Холост/не замужем'},
-                       {'t': 'x', 's': '//SPAN[text()="Разведен (а)"]', 'txt': 'Разведен (а)'},
-                       {'t': 'x', 's': '//SPAN[text()="Гражданский брак"]', 'txt': 'Гражданский брак'},
-                       {'t': 'x', 's': '//SPAN[text()="Женат/замужем"]', 'txt': 'Женат/замужем'},
-                       {'t': 'x', 's': '//SPAN[text()="Вдовец, вдова"]', 'txt': 'Вдовец, вдова'},], # Семейное положение
-'Автомобиль' : [{'t': 'x', 's': '//SPAN[text()="Нет"]', 'txt': 'Нет'},
-                {'t': 'x', 's': '//SPAN[text()="Отечественный"]', 'txt': 'Отечественный'},
-                {'t': 'x', 's': '//SPAN[text()="Иномарка"]', 'txt': 'Иномарка'},], # Автомобиль
-'ЧастоЗагран' : [{'t': 'x', 's': '//SPAN[text()="Реже 1 раза в год"]', 'txt': 'Реже 1 раза в год'},
-                {'t': 'x', 's': '//SPAN[text()="Реже 1 раза в год"]', 'txt': 'Реже 1 раза в год'},
-                {'t': 'x', 's': '//SPAN[text()="1-2 раза в год"]', 'txt': '1-2 раза в год'},
-                {'t': 'x', 's': '//SPAN[text()="3-5 раз в год"]', 'txt': '3-5 раз в год'},
-                {'t': 'x', 's': '//SPAN[text()="Чаще 6 раз в год"]', 'txt': 'Чаще 6 раз в год'},],
-
-'СкДетей' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[3]'    , 'SQL': "status_childs_code"}, # Количество детей
-'ПросрочкиПоКредитам' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[8]'    , 'SQL': "status_credit_delay_code"}, # Просрочки по текущим кредитам
-'ПрВодительскоеУд' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[9]'    , 'SQL': "driver_card_attachment_id"}, # Предоставит вод.удостоверение
-'ПрЗагранпаспорт' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[10]'   , 'SQL': "international_passport_attachment_id"}, # Предоставит Загранпаспорт
-'ПрПенсионноеУд' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[11]'   , 'SQL': "pensioner_card_attachment_id"}, # Предоставит Пенс.удостоверение
-'ПрУдОфицера' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[12]'   , 'SQL': "identity_card_mvd_attachment_id"}, # Предоставит Удост.офицера МВД
-'ПрВоенныйБилет' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[13]'   , 'SQL': "military_card_attachment_id"}, # Предоставит Военный билет
-'ПрСвРегТС' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[14]'   , 'SQL': "auto_reg_attachment_id"}, # Cвидетельство регистрации ТС
-'ПрОригПТС' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[15]'   , 'SQL': "auto_pts_attachment_id"}, # Оригинал ПТС
-'ПрПолисКАСКО' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[16]'   , 'SQL': "auto_kasko_attachment_id"}, # Полис страхования КАСКО
-'ПрПолисОСАГО' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[17]'   , 'SQL': "auto_osago_attachment_id"}, # Полис ОСАГО
-'ПрСНИЛС' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[18]'   , 'SQL': "number_attachment_id"}, # Предоставит СНИЛС
-'ПрИНН' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[19]'   , 'SQL': "inn_attachment_id"}, # Предоставит ИНН
-'Пр2НДФЛ' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[20]'   , 'SQL': "has_2NDFL"}, # Предоставит 2 НДФЛ
-'ПрСправкуОДоходах' : {'t': 'x', 's': '//[@class="tcs-plugin-select2"])[21]'   , 'SQL': "has_income_report"}, # Предоставит Справку о доходах
-}
-
-# вначале выбираем эти
-inputtity_first = [
-                   "addresstype_registered_postal_code", "addresstype_registered_place",
-                   "addresstype_registered_area", "addresstype_registered_city",
-                   "addresstype_registered_street", "addresstype_registered_building",
-                   "addresstype_registered_corpus", "addresstype_registered_flat", "addresstype_home_postal_code",
-                   "addresstype_home_place", "addresstype_home_area", "addresstype_home_city",
-                   "addresstype_home_street", "addresstype_home_building",
-                   "addresstype_home_corpus", "addresstype_home_flat",
-                   "addresstype_work_postal_code", "addresstype_work_place", "addresstype_work_area",
-                   "addresstype_work_city", "addresstype_work_street", "addresstype_work_building",
-                   "addresstype_work_corpus", "addresstype_work_flat"
-                  ]
-
-
-gluk_w_point = ["surname", "name", "patronymic", "passport_who_given", "place_of_birth",
-                "addresstype_registered_place", "addresstype_registered_area", "addresstype_registered_city",
-                "addresstype_registered_street",
-                "addresstype_home_place", "addresstype_home_area", "addresstype_home_city","addresstype_home_street",
-                "addresstype_work_place", "addresstype_work_area", "addresstype_work_city", "addresstype_work_street"
-                ]
-
+def post_status(url, click_id, status, message, log, bad_log):
+    statuses = {
+        "1": "Заполняет анкету",
+        "2": "Ждет СМС",
+        "3": "Ждет запроса на СМС",
+        "4": "Успешное завершение",
+        "5": "Вылетел с ошибкой",
+        "6": "Завис",
+        "7": "Перегрузка (слишком много aloader'ов)",
+        "8": "Невозможно ввести SMS, нет такого aloader'а",
+        "9": "Был убит",
+       "10": "Таймаут, нет правильной СМС"
+    }
+    field = json.dumps({'status': int(status), 'message': message}).encode('utf8')
+    res = requests.post(url + click_id, data=field, headers={'content-type': 'application/json'})
+    if res.status_code == 200:
+        writelog(log, click_id, 'В postAPI отправлен статус "' + statuses[str(status)] + '", ответ - '
+                 + str(res.status_code))
+    else:
+        writelog(log, click_id, 'Ошибка отправки статуса "' + statuses[str(status)] + '" в postAPI, ответ - '
+                 + str(res.status_code))
+        writelog(bad_log, click_id, 'Ошибка отправки статуса "' + statuses[str(status)] + '" в postAPI, ответ - '
+                 + str(res.status_code))
