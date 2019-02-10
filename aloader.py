@@ -27,21 +27,23 @@ bad_log = open(LOG_PATH + BAD_TRANSACTION_LOG_FILE, 'a')
 log = open(LOG_PATH + LOG_FILE, 'a')
 
 
+inp = sys.stdin.readline().rstrip()
 #ajson = json.loads('{"passport_lastname": "Гапон"}')
-ajson = json.loads(sys.stdin.readline().rstrip())
+ajson = json.loads(inp)
 aid = ajson['click_id']
 
+loading = ajson['__command']['type'] == 'queue'
 complete_orderity = False
 cycles_orderity = 0
-while (not complete_orderity) and cycles_orderity < CYCLES_ORDERITY:
+while (not complete_orderity) and cycles_orderity < CYCLES_ORDERITY and loading:
     try:
-        driver = webdriver.Chrome(DRIVER_PATH)
-        driver.implicitly_wait(10)
         link = ajson['__landing_url'] + '&afclick=' + ajson['click_id']
-        driver.get(url=link)
         # Начинаем заполнять
         writelog(log, aid, 'Начинаем заполнять по ссылке' + link + str(ajson), str(pid))
         post_status(post_url, aid, 1, 'Начинаем заполнять', log, bad_log)
+        driver = webdriver.Chrome(DRIVER_PATH)
+        driver.implicitly_wait(10)
+        driver.get(url=link)
         for i, order in enumerate(orderity):
             if order.get('check'):
                 data4send = {'t': 'x', 's': order['check']}
@@ -166,27 +168,39 @@ if complete_orderity:
     sms_start_time = datetime.now()
     server_timeout = False
     uspeh = False
+    last_state = 0
+    client_timeout = False
     while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not server_timeout and not uspeh:
         current_stdin = bytes()
         while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not current_stdin \
                 and not server_timeout and not uspeh:
             current_html = driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
             if current_html.find(' сек<!-- /react-text --></p>') > -1:
-                writelog(log, aid, 'Ждем СМС', str(pid))
-                post_status(post_url, aid, 2, 'Ждем СМС', log, bad_log)
-            elif current_html.find('Изменить номер телефона') > -1:
-                writelog(log, aid, 'Ждем запроса на СМС', str(pid))
-                post_status(post_url, aid, 3, 'Ждем запроса на СМС', log, bad_log)
+                if last_state != 1:
+                    last_state = 1
+                    writelog(log, aid, 'Ждем СМС', str(pid))
+                    post_status(post_url, aid, 2, 'Ждем СМС', log, bad_log)
+            elif current_html.find('Запросить пароль повторно') > -1:
+                if last_state != 2:
+                    last_state = 2
+                    writelog(log, aid, 'Ждем запроса на СМС', str(pid))
+                    post_status(post_url, aid, 3, 'Ждем запроса на СМС', log, bad_log)
             elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
-                server_timeout = True
-            elif current_html.find('!!!!!!!!!!!!КОНЕЧНЫЙ ЭКРАН ОТ АНИИ!!!!!!!!!!!!') > -1:
-                uspeh = True
+                if last_state != 3:
+                    last_state = 3
+                    server_timeout = True
+            elif current_html.find(', спасибо за оформление заявки на кредитную карту. Ваши дальнейшие шаги:') > -1:
+                if last_state != 4:
+                    last_state = 4
+                    uspeh = True
             else:
-                writelog(log, aid, 'Непонятно чего ждем, похоже aloader сбился', str(pid))
+                if last_state != 5:
+                    last_state = 5
+                    writelog(log, aid, 'Непонятно чего ждем, похоже aloader сбился', str(pid))
             time.sleep(1)
             current_stdin = sys.stdin.readline().rstrip()
         if current_stdin:
-            ajson = json.loads(bytes.decode(current_stdin))
+            ajson = json.loads(current_stdin)
             if ajson['__command']['type'] == 'confirm':
                 data4send = {'t': 'x', 's': smsity['Ввести СМС']}
                 elem = p(d=driver, f='p', **data4send)
@@ -198,7 +212,9 @@ if complete_orderity:
                 elem = p(d=driver, f='c', **data4send)
                 wj(driver)
                 elem.click()
-    if server_timeout:
+        if datetime.now() - sms_start_time > timedelta(minutes=ALOADER_TIMEOUT):
+            client_timeout = True
+    if server_timeout or client_timeout:
         writelog(log, aid, 'Таймаут, нет правильной СМС', str(pid))
         post_status(post_url, aid, 10, 'Таймаут, нет правильной СМС', log, bad_log)
     elif uspeh:
@@ -206,6 +222,10 @@ if complete_orderity:
         post_status(post_url, aid, 4, 'Заявка выгружена', log, bad_log)
     driver.close()
 else:
-    post_status(post_url, aid, 5, 'Вылетел с ошибкой: ' + str(e), log, bad_log)
+    if loading:
+        post_status(post_url, aid, 5, 'Вылетел с ошибкой: ' + str(e), log, bad_log)
+    else:
+        post_status(post_url, aid, 5, 'Вылетел с неизвестной ошибкой', log, bad_log)
+        writelog(log, aid, 'Вылетел с неизвестной ошибкой', str(pid))
 bad_log.close()
 log.close()

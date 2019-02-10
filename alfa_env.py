@@ -11,7 +11,7 @@ LOG_FILE = 'rabbit_transfer.log'
 BAD_TRANSACTION_LOG_FILE = 'rabbit_bad_transactions.log'
 MAX_PROCESSES = 10
 CYCLES_ORDERITY = 5 # Количество попыток заполнения заявки
-ALOADER_TIMEOUT = 15 # минут - время жизни aloader'а после заполнения заявки
+ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 
 # список очерёдности
 orderity = [
