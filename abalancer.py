@@ -55,6 +55,10 @@ def callback(ch, method, properties, body):
                 print(proc, ' - ', procs[proc].pid)
         else:
             print("нет работающих aloader'ов")
+        if aid in procs.keys():
+            # есть такой aloader - посылаем пустую строку
+            procs[aid].stdin.write(b"\n")
+            procs[aid].stdin.flush()
 
     # запускаем/удаляем aloader или посылаем запрос СМС или вносим цифры СМС
     if ajson['__command']['type'] == 'queue':

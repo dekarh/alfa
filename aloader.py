@@ -35,7 +35,9 @@ aid = ajson['click_id']
 loading = ajson['__command']['type'] == 'queue'
 complete_orderity = False
 cycles_orderity = 0
-while (not complete_orderity) and cycles_orderity < CYCLES_ORDERITY and loading:
+formatting_error = ''
+tek_order = orderity[0]
+while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading:
     try:
         link = ajson['__landing_url'] + '&afclick=' + ajson['click_id']
         # Начинаем заполнять
@@ -45,6 +47,7 @@ while (not complete_orderity) and cycles_orderity < CYCLES_ORDERITY and loading:
         driver.implicitly_wait(10)
         driver.get(url=link)
         for i, order in enumerate(orderity):
+            tek_order = order
             if order.get('check'):
                 data4send = {'t': 'x', 's': order['check']}
                 elem = p(d=driver, f='p', **data4send)
@@ -89,9 +92,8 @@ while (not complete_orderity) and cycles_orderity < CYCLES_ORDERITY and loading:
                 data4send = {'t': 'x', 's': order['input']}
                 elem = p(d=driver, f='p', **data4send)
                 wj(driver)
-                elem.send_keys(' ')
-                elem.clear()
-                elem.send_keys(' ')
+#                elem.send_keys(' ')
+#                elem.clear()
                 elem.send_keys(fromSQL)
                 wj(driver)
             if fromSQL and order.get('input-tel'):
@@ -153,9 +155,27 @@ while (not complete_orderity) and cycles_orderity < CYCLES_ORDERITY and loading:
         complete_orderity = True
     except Exception as e:
         cycles_orderity += 1
+        data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]'}
+        input_errors = p(d=driver, f='ps', **data4send)
+        input_errors_nulled = []
+        formatting_error = ''
+        if len(input_errors):
+            for i, input_error in enumerate(input_errors):
+                if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                    input_errors_nulled.append(input_error)
+            formatting_error = 'Ошибки ввода:'
+            for i, input_error in enumerate(input_errors_nulled):
+                formatting_error += '\n' + str(i) + ') ' + input_error
+            formatting_error += '\n Исправьте ошибки, сохраните и отправьте заявку заново'
         nowtime = datetime.now()
         stamp = aid + '(' + str(pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
-        writelog(bad_log, aid, orderity[i]['alfa'] + ' ' + str(ajson) + '\n * * * \n' + str(e), str(pid), nowtime)
+        if formatting_error:
+            writelog(bad_log, aid, tek_order['alfa'] + formatting_error, str(pid), nowtime)
+            post_status(post_url, aid, 1, formatting_error , log, bad_log)
+        else:
+            writelog(bad_log, aid, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту.\nинформация для отдадки:'
+                     + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' + str(e), str(pid), nowtime)
+            post_status(post_url, aid, 5, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту', log, bad_log)
         html_log = open(LOG_PATH + stamp + '.html', 'w')
         html_elem = driver.find_element_by_xpath('//HTML')
         html_log.write(html_elem.get_attribute('innerHTML'))
@@ -198,20 +218,33 @@ if complete_orderity:
                     last_state = 5
                     writelog(log, aid, 'Непонятно чего ждем, похоже aloader сбился', str(pid))
             time.sleep(1)
+
             current_stdin = sys.stdin.readline().rstrip()
         if current_stdin:
             ajson = json.loads(current_stdin)
             if ajson['__command']['type'] == 'confirm':
-                data4send = {'t': 'x', 's': smsity['Ввести СМС']}
-                elem = p(d=driver, f='p', **data4send)
-                wj(driver)
-                elem.send_keys(ajson['__command']['value'])
-                wj(driver)
+                try:
+                    writelog(log, aid, 'Получено СМС: ' + str(ajson), str(pid))
+                    data4send = {'t': 'x', 's': smsity['Ввести СМС']}
+                    elem = p(d=driver, f='p', **data4send)
+                    wj(driver)
+                    elem.send_keys(ajson['__command']['value'])
+                    wj(driver)
+                except Exception as e:
+                    writelog(log, aid, 'Ошибка при отправлении СМС: ' + str(ajson), str(pid))
+                    writelog(bad_log, aid, 'Ошибка при отправлении СМС: ' + str(ajson), str(pid))
+                    post_status(post_url, aid, 5, 'Ошибка при отправлении СМС, повторите отправку', log, bad_log)
             elif ajson['__command']['type'] == 'retry':
-                data4send = {'t': 'x', 's': smsity['Запросить пароль повторно']}
-                elem = p(d=driver, f='c', **data4send)
-                wj(driver)
-                elem.click()
+                try:
+                    writelog(log, aid, 'Получена заявка на запрос СМС: ' + str(ajson), str(pid))
+                    data4send = {'t': 'x', 's': smsity['Запросить пароль повторно']}
+                    elem = p(d=driver, f='c', **data4send)
+                    wj(driver)
+                    elem.click()
+                except Exception as e:
+                    writelog(log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson), str(pid))
+                    writelog(bad_log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson), str(pid))
+                    post_status(post_url, aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос', log, bad_log)
         if datetime.now() - sms_start_time > timedelta(minutes=ALOADER_TIMEOUT):
             client_timeout = True
     if server_timeout or client_timeout:
