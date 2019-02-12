@@ -30,7 +30,7 @@ class aloader:
         self.log = open(LOG_PATH + LOG_FILE, 'a')
 
     def __del__(self):  # Деструктор класса
-        self.driver.close()
+        self.driver.quit()
         self.bad_log.close()
         self.log.close()
 
@@ -45,6 +45,7 @@ class aloader:
         #ajson = json.loads('{"passport_lastname": "Якубович"}')
         ajson = json.loads(inp)
         aid = ajson['click_id']
+        self.driver.get(url=(ajson['__landing_url'] + '&afclick=' + ajson['click_id']))
 
         loading = ajson['__command']['type'] == 'queue'
         complete_orderity = False
@@ -53,12 +54,10 @@ class aloader:
         tek_order = orderity[0]
         while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading:
             try:
-                link = ajson['__landing_url'] + '&afclick=' + ajson['click_id']
                 # Начинаем заполнять
-                writelog(self.log, aid, 'Начинаем заполнять по ссылке' + link + str(ajson), str(pid))
+                writelog(self.log, aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
+                         ajson['click_id'] + str(ajson), str(pid))
                 post_status(post_url, aid, 1, 'Начинаем заполнять', self.log, self.bad_log)
-                self.driver.start_client()
-                self.driver.get(url=link)
                 for i, order in enumerate(orderity):
                     tek_order = order
                     if order.get('check'):
@@ -168,7 +167,8 @@ class aloader:
                 complete_orderity = True
             except Exception as e:
                 cycles_orderity += 1
-                data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]'}
+                data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]',
+                             'a': 'text'}
                 input_errors = p(d=self.driver, f='ps', **data4send)
                 input_errors_nulled = []
                 formatting_error = ''
@@ -178,7 +178,7 @@ class aloader:
                             input_errors_nulled.append(input_error)
                     formatting_error = 'Ошибки ввода:'
                     for i, input_error in enumerate(input_errors_nulled):
-                        formatting_error += '\n' + str(i) + ') ' + input_error
+                        formatting_error += '\n' + str(i + 1) + ') ' + input_error
                     formatting_error += '\n Исправьте ошибки, сохраните и отправьте заявку заново'
                 nowtime = datetime.now()
                 stamp = aid + '(' + str(pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
@@ -195,7 +195,11 @@ class aloader:
                 html_log.close()
                 self.driver.save_screenshot(LOG_PATH + stamp + '.png')
                 writelog(self.log, aid, 'Ошибка - см. лог ошибок, скриншот, файл html', str(pid), nowtime)
-                self.driver.stop_client()
+                self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
+                                           '","_blank");')
+                self.driver.switch_to_window(self.driver.window_handles[0])
+                self.driver.close()
+                self.driver.switch_to_window(self.driver.window_handles[0])
 
         if complete_orderity:
             sms_start_time = datetime.now()
