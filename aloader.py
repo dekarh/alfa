@@ -1,12 +1,14 @@
 
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
-import os, sys, select
+import os, sys
+from select import select as check_select
 from datetime import datetime, timedelta
 import json
 import requests
@@ -25,10 +27,12 @@ post_api = read_config(filename='alfa.ini', section='postAPI')
 post_url = post_api['url']
 bad_log = open(LOG_PATH + BAD_TRANSACTION_LOG_FILE, 'a')
 log = open(LOG_PATH + LOG_FILE, 'a')
+opts = Options()
+#opts.headless=True # Невидимый режим браузера - пока выключим
 
 
 inp = sys.stdin.readline().rstrip()
-#ajson = json.loads('{"passport_lastname": "Гапон"}')
+#ajson = json.loads('{"passport_lastname": "Якубович"}')
 ajson = json.loads(inp)
 aid = ajson['click_id']
 
@@ -43,7 +47,7 @@ while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading
         # Начинаем заполнять
         writelog(log, aid, 'Начинаем заполнять по ссылке' + link + str(ajson), str(pid))
         post_status(post_url, aid, 1, 'Начинаем заполнять', log, bad_log)
-        driver = webdriver.Chrome(DRIVER_PATH)
+        driver = webdriver.Chrome(DRIVER_PATH, options=opts)
         driver.implicitly_wait(10)
         driver.get(url=link)
         for i, order in enumerate(orderity):
@@ -218,7 +222,7 @@ if complete_orderity:
                     last_state = 5
                     writelog(log, aid, 'Непонятно чего ждем, похоже aloader сбился', str(pid))
             time.sleep(1)
-            ready, x, y = select.select([sys.stdin], [], [], 0)
+            ready, x, y = check_select([sys.stdin], [], [], 0)
             if ready:
                 current_stdin = sys.stdin.readline().rstrip()
         if current_stdin:
