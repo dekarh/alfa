@@ -145,11 +145,10 @@ orderity = [
 ]
 smsity = {
     'Изменить номер телефона': '//SPAN[@class="button__text"][text()="Изменить номер телефона"]',
-    'Ждет СМС': '//P[@class="paragraph paragraph_theme_alfa-on-white confirmation__text"][contains(text(),"сек")]',
-    'Ждет запроса на СМС': '//SPAN[@class="button__text"][text()="Запросить пароль повторно"]',
+    'Ждет СМС': '//P[contains(@class,"confirmation__text")][contains(text(),"сек")]',
+    'Ждет запроса на СМС': '//SPAN[text()="Запросить пароль повторно"]',
     'Запросить пароль повторно': '//SPAN[@class="button__text"][text()="Запросить пароль повторно"]/../..',
-    'Ввести СМС': '//SPAN[@class="input input_type_tel input_size_m input_theme_alfa-on-white autosubmit-input '
-                  'autosubmit-input_theme_alfa-on-white confirmation-modal__input"]//INPUT[@class="input__control"]'
+    'Ввести СМС': '//SPAN[contains(@class,"confirmation-modal__input")]//INPUT[@class="input__control"]'
 }
 
 

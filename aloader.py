@@ -6,7 +6,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
-import os, sys
+import os, sys, select
 from datetime import datetime, timedelta
 import json
 import requests
@@ -191,7 +191,7 @@ if complete_orderity:
     last_state = 0
     client_timeout = False
     while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not server_timeout and not uspeh:
-        current_stdin = bytes()
+        current_stdin = ''
         while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not current_stdin \
                 and not server_timeout and not uspeh:
             current_html = driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
@@ -218,8 +218,9 @@ if complete_orderity:
                     last_state = 5
                     writelog(log, aid, 'Непонятно чего ждем, похоже aloader сбился', str(pid))
             time.sleep(1)
-
-            current_stdin = sys.stdin.readline().rstrip()
+            ready, x, y = select.select([sys.stdin], [], [], 0)
+            if ready:
+                current_stdin = sys.stdin.readline().rstrip()
         if current_stdin:
             ajson = json.loads(current_stdin)
             if ajson['__command']['type'] == 'confirm':
@@ -228,11 +229,19 @@ if complete_orderity:
                     data4send = {'t': 'x', 's': smsity['Ввести СМС']}
                     elem = p(d=driver, f='p', **data4send)
                     wj(driver)
+                    for k in range(6):
+                        elem.send_keys(Keys.BACKSPACE)
+                        wj(driver)
                     elem.send_keys(ajson['__command']['value'])
                     wj(driver)
                 except Exception as e:
                     writelog(log, aid, 'Ошибка при отправлении СМС: ' + str(ajson), str(pid))
-                    writelog(bad_log, aid, 'Ошибка при отправлении СМС: ' + str(ajson), str(pid))
+                    #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
+                    #                    sms_window = p(d=driver, f='p', **data4send)
+                    #                    sms_window_htm = '\n-------- окошко запроса пароля --------\n' +\
+                    #                                      sms_window.get_attribute('innerHTML')
+                    sms_window_htm = ''
+                    writelog(bad_log, aid, 'Ошибка при отправлении СМС: ' + str(ajson) + sms_window_htm, str(pid))
                     post_status(post_url, aid, 5, 'Ошибка при отправлении СМС, повторите отправку', log, bad_log)
             elif ajson['__command']['type'] == 'retry':
                 try:
@@ -243,7 +252,12 @@ if complete_orderity:
                     elem.click()
                 except Exception as e:
                     writelog(log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson), str(pid))
-                    writelog(bad_log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson), str(pid))
+#                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
+#                    sms_window = p(d=driver, f='p', **data4send)
+#                    sms_window_htm = '\n-------- окошко запроса пароля --------\n' +\
+#                                      sms_window.get_attribute('innerHTML')
+                    sms_window_htm = ''
+                    writelog(bad_log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson) + sms_window_htm, str(pid))
                     post_status(post_url, aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос', log, bad_log)
         if datetime.now() - sms_start_time > timedelta(minutes=ALOADER_TIMEOUT):
             client_timeout = True

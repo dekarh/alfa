@@ -39,7 +39,7 @@ def callback(ch, method, properties, body):
 
     # удаляем завершенные aloader'ы из procs
     for proc in procs:
-        if procs[proc].returncode != None:
+        if procs[proc].poll() != None:
             old = procs[aid].pid
             procs.pop(proc)
             writelog(log, aid, str(old) + ' - завершился, удаляем', 1)
@@ -49,7 +49,7 @@ def callback(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
         writelog(log, aid, "Поступил запрос на обновление списка aloader'ов", 1)
         print(aid, "Поступил запрос на обновление списка aloader'ов. Список действующих:")
-        # а мы их уже обновили/удалили в пердыдущем цикле, поэтому просто печатаем
+        # а мы их уже обновили/удалили в предыдущем цикле, поэтому просто печатаем
         if len(procs):
             for proc in procs:
                 print(proc, ' - ', procs[proc].pid)
