@@ -31,7 +31,7 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
     {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@placeholder="Регион работы"]',
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="', 'post-click': '//DIV[contains(@class,"landing-page")]'},
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
     #------------------------------------------------ страница 2 ---------------------
     {'alfa': 'Серия', 'SQL': ['passport_seria'], 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
      'post-click': '//H3'},
@@ -62,7 +62,7 @@ orderity = [
      'pre-click': '//SPAN[@class="input__top"][text()="Регион регистрации"]/..',
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
      'post-click': '//H3'},
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '40%'},
     #------------------------------------------------ страница 3 ---------------------
     {'alfa': 'Название организации', 'SQL': ['work_organization'],
      'pre-click': '//SPAN[@class="input__top"][text()="Название организации"]/..',
@@ -88,7 +88,7 @@ orderity = [
      'pre-click': '//SPAN[@class="select__top"][text()="Образование"]/..',
      'click': '//SPAN[@class="menu-item__control"][text()="Высшее"]/..',
      'post-click': '//H3'},
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '60%'},
     # ------------------------------------------------ страница 4 ---------------------
     {'alfa': 'Желаемый кредитный лимит', 'SQL': ['credit_limit'],
      'pre-click': '//SPAN[@class="input__top"][text()="Желаемый кредитный лимит"]/..',
@@ -106,7 +106,7 @@ orderity = [
      'pre-click': '//SPAN[@class="select__top"][text()="Документ, подтверждающий доход"]/..',
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
      'post-click': '//H3'},
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '80%'},
     # ------------------------------------------------ страница 5 ---------------------
     {'alfa': 'Фамилия контактного лица', 'SQL': ['reference_lastname'],
      'pre-click': '//SPAN[@class="input__top"][text()="Фамилия контактного лица"]/..',
@@ -138,7 +138,7 @@ orderity = [
                       '//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..'],
      'radio-select-input': ['Сегодня (Без фамилии и имени на карте)', 'Через 1-3 дня (С фамилией и именем на карте)']},
     {'alfa': 'Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)', 'SQL': ['allow_night_calls'], 'pre-wait': 2,
-     'checkbox': '//SPAN[text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]'},
+     'checkbox': '//SPAN[text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]', 'loaded': '100%'},
     # ------------------------------------------------ Отправить заявку ---------------------
     {'alfa': 'Отправить заявку', 'click': '//SPAN[@class="button__text"][text()="Отправить заявку"]'},
 
@@ -180,7 +180,7 @@ clicktity = {
                        'SQL': "IF(b.travel_information_code>0,1,0)"},
 'ПредоставлюЗагранПаспорт' : {'t': 'x', 's': '//SPAN[text()="Предоставлю на встрече заграничный паспорт"]',
                               'SQL': "IF(b.travel_information_code>0,1,0)"},
-'Ошибки' : {'t': 'x', 's': '//DIV[@class="ui-form-field-error-message ui-form-field-error-message_ui-form"]', 'a':'text', 'SQL': "1"},
+'Ошибки-старые' : {'t': 'x', 's': '//DIV[@class="ui-form-field-error-message ui-form-field-error-message_ui-form"]', 'a':'text', 'SQL': "1"},
 }
 
 def writelog(file, click_id, message, pid=0, date_time=datetime.now()):

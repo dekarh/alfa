@@ -19,6 +19,9 @@ from alfa_env import post_status, ALOADER_TIMEOUT, smsity
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
 
+class KillException(Exception):
+    pass
+
 class aloader:
     def __init__(self): # Конструктор класса
         opts = Options()
@@ -28,6 +31,7 @@ class aloader:
         self.driver.stop_client()
         self.bad_log = open(LOG_PATH + BAD_TRANSACTION_LOG_FILE, 'a')
         self.log = open(LOG_PATH + LOG_FILE, 'a')
+        self.current_stdin = ''
 
     def __del__(self):  # Деструктор класса
         self.driver.quit()
@@ -37,14 +41,14 @@ class aloader:
     def base(self):
         webconfig = read_config(filename='alfa.ini', section='web')
         fillconfig = read_config(filename='alfa.ini', section='fill')
-        pid = os.getpid()
+        self.pid = os.getpid()
         post_api = read_config(filename='alfa.ini', section='postAPI')
-        post_url = post_api['url']
+        self.post_url = post_api['url']
 
         inp = sys.stdin.readline().rstrip()
         #ajson = json.loads('{"passport_lastname": "Якубович"}')
         ajson = json.loads(inp)
-        aid = ajson['click_id']
+        self.aid = ajson['click_id']
         self.driver.get(url=(ajson['__landing_url'] + '&afclick=' + ajson['click_id']))
 
         loading = ajson['__command']['type'] == 'queue'
@@ -54,10 +58,19 @@ class aloader:
         tek_order = orderity[0]
         while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading:
             try:
+                # Проверяем stdin
+                ready, x, y = check_select([sys.stdin], [], [], 0)
+                if ready:
+                    self.current_stdin = sys.stdin.readline().rstrip()
+                if self.current_stdin:
+                    bjson = json.loads(self.current_stdin)
+                    if bjson['__command']['type'] == 'kill':
+                        self.current_stdin = ''
+                        raise KillException
                 # Начинаем заполнять
-                writelog(self.log, aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
-                         ajson['click_id'] + str(ajson), str(pid))
-                post_status(post_url, aid, 1, 'Начинаем заполнять', self.log, self.bad_log)
+                writelog(self.log, self.aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
+                         ajson['click_id'] + str(ajson), str(self.pid))
+                post_status(self.post_url, self.aid, 1, 'Начинаем выгрузку на сервер', self.log, self.bad_log)
                 for i, order in enumerate(orderity):
                     tek_order = order
                     if order.get('check'):
@@ -145,7 +158,7 @@ class aloader:
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()
-                        stamp = aid + '(' + str(pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+                        stamp = self.aid + '(' + str(self.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
                         self.driver.save_screenshot(LOG_PATH + stamp + '.png')
                     if fromSQL and order.get('radio-select'):
                         sel = -1
@@ -164,7 +177,11 @@ class aloader:
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()
+                    if order.get('loaded'):
+                        post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
                 complete_orderity = True
+            except KillException:
+                raise
             except Exception as e:
                 cycles_orderity += 1
                 data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]',
@@ -181,25 +198,25 @@ class aloader:
                         formatting_error += '\n' + str(i + 1) + ') ' + input_error
                     formatting_error += '\n Исправьте ошибки, сохраните и отправьте заявку заново'
                 nowtime = datetime.now()
-                stamp = aid + '(' + str(pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
+                stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
                 if formatting_error:
-                    writelog(self.bad_log, aid, tek_order['alfa'] + formatting_error, str(pid), nowtime)
-                    post_status(post_url, aid, 1, formatting_error , self.log, self.bad_log)
+                    writelog(self.bad_log, self.aid, tek_order['alfa'] + formatting_error, str(self.pid), nowtime)
+                    post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
                 else:
-                    writelog(self.bad_log, aid, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту.\nинформация для отдадки:'
-                             + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' + str(e), str(pid), nowtime)
-                    post_status(post_url, aid, 5, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту', self.log, self.bad_log)
+                    writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту.\nинформация для отдадки:'
+                             + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' + str(e), str(self.pid), nowtime)
+                    post_status(self.post_url, self.aid, 5, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту', self.log, self.bad_log)
                 html_log = open(LOG_PATH + stamp + '.html', 'w')
                 html_elem = self.driver.find_element_by_xpath('//HTML')
                 html_log.write(html_elem.get_attribute('innerHTML'))
                 html_log.close()
                 self.driver.save_screenshot(LOG_PATH + stamp + '.png')
-                writelog(self.log, aid, 'Ошибка - см. лог ошибок, скриншот, файл html', str(pid), nowtime)
+                writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', str(self.pid), nowtime)
                 self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
                                            '","_blank");')
-                self.driver.switch_to_window(self.driver.window_handles[0])
+                self.driver.switch_to.window(self.driver.window_handles[0])
                 self.driver.close()
-                self.driver.switch_to_window(self.driver.window_handles[0])
+                self.driver.switch_to.window(self.driver.window_handles[0])
 
         if complete_orderity:
             sms_start_time = datetime.now()
@@ -208,89 +225,106 @@ class aloader:
             last_state = 0
             client_timeout = False
             while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not server_timeout and not uspeh:
-                current_stdin = ''
-                while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not current_stdin \
+                while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not self.current_stdin \
                         and not server_timeout and not uspeh:
                     current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
                     if current_html.find(' сек<!-- /react-text --></p>') > -1:
                         if last_state != 1:
                             last_state = 1
-                            writelog(self.log, aid, 'Ждем СМС', str(pid))
-                            post_status(post_url, aid, 2, 'Ждем СМС', self.log, self.bad_log)
+                            writelog(self.log, self.aid, 'Ждем СМС', str(self.pid))
+                            post_status(self.post_url, self.aid, 2, 'Ждем СМС', self.log, self.bad_log)
                     elif current_html.find('Запросить пароль повторно') > -1:
                         if last_state != 2:
                             last_state = 2
-                            writelog(self.log, aid, 'Ждем запроса на СМС', str(pid))
-                            post_status(post_url, aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
+                            writelog(self.log, self.aid, 'Ждем запроса на СМС', str(self.pid))
+                            post_status(self.post_url, self.aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                         if last_state != 3:
                             last_state = 3
                             server_timeout = True
-                    elif current_html.find(', спасибо за оформление заявки на кредитную карту. Ваши дальнейшие шаги:') > -1:
+                    elif current_html.find('Ваши дальнейшие шаги:') > -1:
                         if last_state != 4:
                             last_state = 4
                             uspeh = True
                     else:
                         if last_state != 5:
                             last_state = 5
-                            writelog(self.log, aid, 'Непонятно чего ждем, похоже aloader сбился', str(pid))
+                            writelog(self.log, self.aid, 'Непонятно чего ждем, похоже aloader сбился', str(self.pid))
                     time.sleep(1)
                     ready, x, y = check_select([sys.stdin], [], [], 0)
                     if ready:
-                        current_stdin = sys.stdin.readline().rstrip()
-                if current_stdin:
-                    ajson = json.loads(current_stdin)
-                    if ajson['__command']['type'] == 'confirm':
+                        self.current_stdin = sys.stdin.readline().rstrip()
+                if self.current_stdin:
+                    bjson = json.loads(self.current_stdin)
+                    if bjson['__command']['type'] == 'confirm':
                         try:
-                            writelog(self.log, aid, 'Получено СМС: ' + str(ajson), str(pid))
+                            self.current_stdin = ''
+                            writelog(self.log, self.aid, 'Получено СМС: ' + str(bjson), str(self.pid))
                             data4send = {'t': 'x', 's': smsity['Ввести СМС']}
                             elem = p(d=self.driver, f='p', **data4send)
                             wj(self.driver)
                             for k in range(6):
                                 elem.send_keys(Keys.BACKSPACE)
                                 wj(self.driver)
-                            elem.send_keys(ajson['__command']['value'])
+                            elem.send_keys(bjson['__command']['value'])
                             wj(self.driver)
                         except Exception as e:
-                            writelog(self.log, aid, 'Ошибка при отправлении СМС: ' + str(ajson), str(pid))
+                            writelog(self.log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson), str(self.pid))
                             #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
                             #                    sms_window = p(d=self.driver, f='p', **data4send)
                             #                    sms_window_htm = '\n-------- окошко запроса пароля --------\n' +\
                             #                                      sms_window.get_attribute('innerHTML')
                             sms_window_htm = ''
-                            writelog(self.bad_log, aid, 'Ошибка при отправлении СМС: ' + str(ajson) + sms_window_htm, str(pid))
-                            post_status(post_url, aid, 5, 'Ошибка при отправлении СМС, повторите отправку', self.log, self.bad_log)
-                    elif ajson['__command']['type'] == 'retry':
+                            writelog(self.bad_log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson) +
+                                     sms_window_htm, str(self.pid))
+                            post_status(self.post_url, self.aid, 5, 'Ошибка при отправлении СМС, повторите отправку',
+                                        self.log, self.bad_log)
+                    elif bjson['__command']['type'] == 'retry':
                         try:
-                            writelog(self.log, aid, 'Получена заявка на запрос СМС: ' + str(ajson), str(pid))
+                            self.current_stdin = ''
+                            writelog(self.log, self.aid, 'Получена заявка на запрос СМС: ' + str(bjson), str(self.pid))
                             data4send = {'t': 'x', 's': smsity['Запросить пароль повторно']}
                             elem = p(d=self.driver, f='c', **data4send)
                             wj(self.driver)
                             elem.click()
                         except Exception as e:
-                            writelog(self.log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson), str(pid))
+                            writelog(self.log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson), str(self.pid))
         #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
         #                    sms_window = p(d=self.driver, f='p', **data4send)
         #                    sms_window_htm = '\n-------- окошко запроса пароля --------\n' +\
         #                                      sms_window.get_attribute('innerHTML')
                             sms_window_htm = ''
-                            writelog(self.bad_log, aid, 'Ошибка при запросе повторной СМС: ' + str(ajson) + sms_window_htm, str(pid))
-                            post_status(post_url, aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос', self.log, self.bad_log)
+                            writelog(self.bad_log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson)
+                                     + sms_window_htm, str(self.pid))
+                            post_status(self.post_url, self.aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос',
+                                        self.log, self.bad_log)
+                    elif bjson['__command']['type'] == 'kill':
+                        self.current_stdin = ''
+                        raise KillException
+
                 if datetime.now() - sms_start_time > timedelta(minutes=ALOADER_TIMEOUT):
                     client_timeout = True
             if server_timeout or client_timeout:
-                writelog(self.log, aid, 'Таймаут, нет правильной СМС', str(pid))
-                post_status(post_url, aid, 10, 'Таймаут, нет правильной СМС', self.log, self.bad_log)
+                writelog(self.log, self.aid, 'Таймаут, нет правильной СМС', str(self.pid))
+                post_status(self.post_url, self.aid, 10, 'Таймаут, нет правильной СМС', self.log, self.bad_log)
             elif uspeh:
-                writelog(self.log, aid, 'Заявка выгружена', str(pid))
-                post_status(post_url, aid, 4, 'Заявка выгружена', self.log, self.bad_log)
+                writelog(self.log, self.aid, 'Заявка выгружена', str(self.pid))
+                post_status(self.post_url, self.aid, 4, 'Заявка выгружена', self.log, self.bad_log)
         else:
             if loading:
-                post_status(post_url, aid, 5, 'Вылетел с ошибкой: ' + str(e), self.log, self.bad_log)
+                post_status(self.post_url, self.aid, 5, 'Ошибка, повторите отправку', self.log, self.bad_log)
             else:
-                post_status(post_url, aid, 5, 'Вылетел с неизвестной ошибкой', self.log, self.bad_log)
-                writelog(self.log, aid, 'Вылетел с неизвестной ошибкой', str(pid))
+                post_status(self.post_url, self.aid, 5, 'Ошибка, повторите отправку', self.log, self.bad_log)
+                writelog(self.log, self.aid, 'Вылетел с неизвестной ошибкой', str(self.pid))
+
 
 al = aloader()
-al.base()
-del al
+try:
+    al.base()
+except KillException:
+    post_status(al.post_url, al.aid, 9, 'Aloader удален', al.log, al.bad_log)
+except Exception as e:
+    writelog(al.log, al.aid, 5, 'Вылетел с ошибкой: ' + str(e), str(al.pid))
+    post_status(al.post_url, al.aid, 5, 'Ошибка, повторите последнее действие', al.log, al.bad_log)
+finally:
+    del al
