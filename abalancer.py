@@ -28,12 +28,11 @@ def callback(ch, method, properties, body):
         writelog(log, aid, "Поступил запрос на закрытие aloader'а", 1)
         print(aid, "Поступил запрос на закрытие aloader'а")
         if aid in procs.keys():
-            old = procs[aid].pid
-            procs[aid].kill()
-            procs.pop(aid)
-            writelog(log, aid, str(old) + ' - убит', 1)
-            print(aid, str(old) + ' - убит')
-            post_status(post_url, aid, 9, aid + '(' + str(old) + ') - убит', log, bad_log)
+            procs[aid].stdin.write(body + b"\n")
+            procs[aid].stdin.flush()
+            writelog(log, aid, str(procs[aid].pid) + ' - закрыт', 1)
+            print(aid, str(procs[aid].pid) + ' - закрыт')
+            post_status(post_url, aid, 9, aid + '(' + str(procs[aid].pid) + ') - закрыт', log, bad_log)
         else:
             print(aid, "Нет такого aloader'а")
 

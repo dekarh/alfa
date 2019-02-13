@@ -184,7 +184,7 @@ class aloader:
                 raise
             except Exception as e:
                 cycles_orderity += 1
-                data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]',
+                data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
                              'a': 'text'}
                 input_errors = p(d=self.driver, f='ps', **data4send)
                 input_errors_nulled = []
@@ -192,11 +192,11 @@ class aloader:
                 if len(input_errors):
                     for i, input_error in enumerate(input_errors):
                         if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
-                            input_errors_nulled.append(input_error)
+                            input_errors_nulled.append(input_error.replace('\n',': '))
                     formatting_error = 'Ошибки ввода:'
                     for i, input_error in enumerate(input_errors_nulled):
                         formatting_error += '\n' + str(i + 1) + ') ' + input_error
-                    formatting_error += '\n Исправьте ошибки, сохраните и отправьте заявку заново'
+                    formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
                 nowtime = datetime.now()
                 stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
                 if formatting_error:
@@ -228,27 +228,32 @@ class aloader:
                 while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not self.current_stdin \
                         and not server_timeout and not uspeh:
                     current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
-                    if current_html.find(' сек<!-- /react-text --></p>') > -1:
+                    if current_html.find('Неправильно введен код смс') > -1:
                         if last_state != 1:
                             last_state = 1
+                            post_status(self.post_url, self.aid, 5, 'Неправильная СМС, введите заново', self.log,
+                                        self.bad_log)
+                    elif current_html.find(' сек<!-- /react-text --></p>') > -1:
+                        if last_state != 2:
+                            last_state = 2
                             writelog(self.log, self.aid, 'Ждем СМС', str(self.pid))
                             post_status(self.post_url, self.aid, 2, 'Ждем СМС', self.log, self.bad_log)
                     elif current_html.find('Запросить пароль повторно') > -1:
-                        if last_state != 2:
-                            last_state = 2
+                        if last_state != 3:
+                            last_state = 3
                             writelog(self.log, self.aid, 'Ждем запроса на СМС', str(self.pid))
                             post_status(self.post_url, self.aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
-                        if last_state != 3:
-                            last_state = 3
-                            server_timeout = True
-                    elif current_html.find('Ваши дальнейшие шаги:') > -1:
                         if last_state != 4:
                             last_state = 4
-                            uspeh = True
-                    else:
+                            server_timeout = True
+                    elif current_html.find('Ваши дальнейшие шаги:') > -1:
                         if last_state != 5:
                             last_state = 5
+                            uspeh = True
+                    else:
+                        if last_state != 6:
+                            last_state = 6
                             writelog(self.log, self.aid, 'Непонятно чего ждем, похоже aloader сбился', str(self.pid))
                     time.sleep(1)
                     ready, x, y = check_select([sys.stdin], [], [], 0)
