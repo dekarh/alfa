@@ -151,8 +151,10 @@ channel.basic_consume(callback, queue='alfabank_100')
 
 try:
     channel.start_consuming()
-except BaseException as e:
+except KeyboardInterrupt:
     pass
+except Exception as e:
+    print('Ошибка: ', e)
 finally:
     bad_log.close()
     log.close()

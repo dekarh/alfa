@@ -19,8 +19,18 @@ from alfa_env import post_status, ALOADER_TIMEOUT, smsity
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
 
+
 class KillException(Exception):
     pass
+
+
+class NoDeliveryException(Exception):
+    pass
+
+
+class IncomeRequiredException(Exception):
+    pass
+
 
 class aloader:
     def __init__(self): # Конструктор класса
@@ -73,6 +83,7 @@ class aloader:
                             self.current_stdin = ''
                             raise KillException
                     tek_order = order
+                    # проверяем на наличие элемента, если нет - пропускаем цикл
                     if order.get('check'):
                         data4send = {'t': 'x', 's': order['check']}
                         elem = p(d=self.driver, f='p', **data4send)
@@ -81,6 +92,7 @@ class aloader:
                             continue
                         if elem.get_attribute('value'):
                             continue
+                    # проверяем на наличие элемента в списке, если ни одного нет - пропускаем цикл
                     if order.get('check-with-name'):
                         elems = self.driver.find_elements_by_xpath(order['check-with-name'])
                         wj(self.driver)
