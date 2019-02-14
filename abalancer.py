@@ -37,12 +37,15 @@ def callback(ch, method, properties, body):
             print(aid, "Нет такого aloader'а")
 
     # удаляем завершенные aloader'ы из procs
+    dieds = {}
     for proc in procs:
         if procs[proc].poll() != None:
-            old = procs[aid].pid
-            procs.pop(proc)
-            writelog(log, aid, str(old) + ' - завершился, удаляем', 1)
-            print(aid, str(old) + ' - завершился, удаляем', 1)
+            dieds[proc] = procs[proc].pid
+
+    for died in dieds:
+        procs.pop(died)
+        writelog(log, died, str(dieds[died]) + ' - завершился, удаляем', 1)
+        print(aid, str(dieds[died]) + ' - завершился, удаляем')
 
     if ajson['__command']['type'] == 'map':
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -148,7 +151,7 @@ channel.basic_consume(callback, queue='alfabank_100')
 
 try:
     channel.start_consuming()
-except BaseException:
+except BaseException as e:
     pass
 finally:
     bad_log.close()

@@ -58,20 +58,20 @@ class aloader:
         tek_order = orderity[0]
         while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading:
             try:
-                # Проверяем stdin
-                ready, x, y = check_select([sys.stdin], [], [], 0)
-                if ready:
-                    self.current_stdin = sys.stdin.readline().rstrip()
-                if self.current_stdin:
-                    bjson = json.loads(self.current_stdin)
-                    if bjson['__command']['type'] == 'kill':
-                        self.current_stdin = ''
-                        raise KillException
                 # Начинаем заполнять
                 writelog(self.log, self.aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
                          ajson['click_id'] + str(ajson), str(self.pid))
                 post_status(self.post_url, self.aid, 1, 'Начинаем выгрузку на сервер', self.log, self.bad_log)
                 for i, order in enumerate(orderity):
+                    # Проверяем stdin
+                    ready, x, y = check_select([sys.stdin], [], [], 0)
+                    if ready:
+                        self.current_stdin = sys.stdin.readline().rstrip()
+                    if self.current_stdin:
+                        bjson = json.loads(self.current_stdin)
+                        if bjson['__command']['type'] == 'kill':
+                            self.current_stdin = ''
+                            raise KillException
                     tek_order = order
                     if order.get('check'):
                         data4send = {'t': 'x', 's': order['check']}
