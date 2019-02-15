@@ -132,7 +132,8 @@ orderity = [
      'pre-click': '//SPAN[@class="input__top"][text()="Город получения карты"]/..',
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
      'post-click': '//H3'},
-    {'alfa': 'Выберите город и способ получения карты', 'click': '//SPAN[@class="title"][text()="Курьером бесплатно"]/..'},
+    {'alfa': 'Выберите город и способ получения карты', 'check-delivery':'//[text()="Курьером бесплатно"]',
+     'click': '//SPAN[@class="title"][text()="Курьером бесплатно"]/..'},
     {'alfa': 'Как быстро вам нужна карта?', 'SQL': ['delivery_time'],
      'radio-select': ['//SPAN[@class="radio__title"][text()="Сегодня"]/..',
                       '//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..'],
@@ -198,12 +199,13 @@ def post_status(url, click_id, status, message, log, bad_log):
         "2": "Ждет СМС",
         "3": "Ждет запроса на СМС",
         "4": "Успешное завершение",
-        "5": "Вылетел с ошибкой",
+        "5": "Ошибка",
         "6": "Завис",
         "7": "Перегрузка (слишком много aloader'ов)",
         "8": "Невозможно ввести SMS, нет такого aloader'а",
         "9": "Был убит",
-       "10": "Таймаут, нет правильной СМС"
+       "10": "Таймаут, нет правильной СМС",
+       "11": "Запрос информации"
     }
     field = json.dumps({'status': int(status), 'message': message}).encode('utf8')
     res = requests.post(url + click_id, data=field, headers={'content-type': 'application/json'})

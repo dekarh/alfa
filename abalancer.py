@@ -75,8 +75,11 @@ def callback(ch, method, properties, body):
         if aid in procs.keys():
             # есть такой aloader - удаляем и создаем новый aloader
             ch.basic_ack(delivery_tag=method.delivery_tag)
+            kill_json = {'click_id': aid, '__command': {'type': 'kill', 'value': None}}
+            kill_body = bytes(json.dumps(kill_json),encoding='utf-8')
+            procs[aid].stdin.write(kill_body + b"\n")
+            procs[aid].stdin.flush()
             old = procs[aid].pid
-            procs[aid].kill()
             procs.pop(aid)
             procs[aid] = subprocess.Popen([sys.executable, aloader], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             procs[aid].stdin.write(body + b"\n")

@@ -28,7 +28,11 @@ class NoDeliveryException(Exception):
     pass
 
 
-class IncomeRequiredException(Exception):
+class RequiredDocumentException(Exception):
+    pass
+
+
+class RequiredPartnerLinkException(Exception):
     pass
 
 
@@ -59,14 +63,17 @@ class aloader:
         #ajson = json.loads('{"passport_lastname": "Якубович"}')
         ajson = json.loads(inp)
         self.aid = ajson['click_id']
-        self.driver.get(url=(ajson['__landing_url'] + '&afclick=' + ajson['click_id']))
-
+        if ajson['__landing_url']:
+            self.driver.get(url=ajson['__landing_url'] + '&afclick=' + ajson['click_id'])
+        else:
+            raise RequiredPartnerLinkException
         loading = ajson['__command']['type'] == 'queue'
         complete_orderity = False
         cycles_orderity = 0
         formatting_error = ''
         tek_order = orderity[0]
         while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading:
+            documents = ''
             try:
                 # Начинаем заполнять
                 writelog(self.log, self.aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
@@ -83,6 +90,11 @@ class aloader:
                             self.current_stdin = ''
                             raise KillException
                     tek_order = order
+                    fromSQL = ''
+                    if order.get('SQL'):            # "Разворачиваем" любой уровень вложенности json
+                        fromSQL = ajson
+                        for stepSQL in order['SQL']:
+                            fromSQL = fromSQL[stepSQL]
                     # проверяем на наличие элемента, если нет - пропускаем цикл
                     if order.get('check'):
                         data4send = {'t': 'x', 's': order['check']}
@@ -92,16 +104,28 @@ class aloader:
                             continue
                         if elem.get_attribute('value'):
                             continue
+                    # проверяем есть ли доставка курьером, если нет - исключение
+                    if order.get('check-delivery'):
+                        data4send = {'t': 'x', 's': order['check-delivery']}
+                        elem = p(d=self.driver, f='p', **data4send)
+                        wj(self.driver)
+                        if not elem:
+                            raise NoDeliveryException
                     # проверяем на наличие элемента в списке, если ни одного нет - пропускаем цикл
                     if order.get('check-with-name'):
                         elems = self.driver.find_elements_by_xpath(order['check-with-name'])
                         wj(self.driver)
+                        if fromSQL == None and len(elems):
+                            raise RequiredDocumentException
                         has_name = False
+                        documents = ''
                         for elem in elems:
+                            documents += ', ' + elem.text
                             if elem.text.find(order['alfa']) > -1:
                                 has_name = True
-                        if not has_name:
-                            continue
+                        documents = documents.strip(',').strip()
+                        if len(elems) and not has_name:
+                            raise RequiredDocumentException
                     if order.get('check-absence'):
                         data4send = {'t': 'x', 's': order['check-absence']}
                         elem = p(d=self.driver, f='p', **data4send)
@@ -120,11 +144,6 @@ class aloader:
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()
-                    fromSQL = ''
-                    if order.get('SQL'):            # "Разворачиваем" любой уровень вложенности json
-                        fromSQL = ajson
-                        for stepSQL in order['SQL']:
-                            fromSQL = fromSQL[stepSQL]
                     if fromSQL and order.get('input'):
                         data4send = {'t': 'x', 's': order['input']}
                         elem = p(d=self.driver, f='p', **data4send)
@@ -192,7 +211,28 @@ class aloader:
                     if order.get('loaded'):
                         post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
                 complete_orderity = True
+            except RequiredPartnerLinkException:
+                writelog(self.log, self.aid, 'Необходимо указать партнерскую ссылку - обратитесть к Вашему куратору',
+                         str(self.pid))
+                post_status(self.post_url, self.aid, 5,  'Необходимо указать партнерскую ссылку - обратитесть к '
+                            'Вашему куратору', self.log, self.bad_log)
+                raise
+            except NoDeliveryException(Exception):
+                writelog(self.log, self.aid, 'Для Вашего региона необходимо предоставить один из документов: ' +
+                         documents + '.\n Исправьте заявку и отправьте её заново', str(self.pid))
+                post_status(self.post_url, self.aid, 11,  'Для Вашего региона необходимо предоставить один из '
+                            'документов: ' + documents + '.\n Исправьте заявку и отправьте её заново',
+                            self.log, self.bad_log)
+                raise
             except KillException:
+                raise
+            except RequiredDocumentException:
+                writelog(self.log, self.aid, 'Для Вашего города доставка курьером невозможна. После поступления СМС, '
+                         'пройдите по ссылке, указанной в нем и выберите удобное Вам место получения карты',
+                         str(self.pid))
+                post_status(self.post_url, self.aid, 11, 'Для Вашего города доставка курьером невозможна. После '
+                            'поступления СМС от банка, пройдите по ссылке, указанной в нем и выберите удобное Вам место'
+                            ' получения карты', self.log, self.bad_log)
                 raise
             except Exception as e:
                 cycles_orderity += 1
@@ -340,6 +380,12 @@ try:
     al.base()
 except KillException:
     post_status(al.post_url, al.aid, 9, 'Aloader удален', al.log, al.bad_log)
+except RequiredDocumentException:
+    pass
+except RequiredPartnerLinkException:
+    pass
+except NoDeliveryException:
+    pass
 except Exception as e:
     writelog(al.log, al.aid, 5, 'Вылетел с ошибкой: ' + str(e), str(al.pid))
     post_status(al.post_url, al.aid, 5, 'Ошибка, повторите последнее действие', al.log, al.bad_log)
