@@ -77,7 +77,7 @@ class aloader:
             try:
                 # Начинаем заполнять
                 writelog(self.log, self.aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
-                         ajson['click_id'] + str(ajson), str(self.pid))
+                         ajson['click_id'] + str(ajson), self.pid)
                 post_status(self.post_url, self.aid, 1, 'Начинаем выгрузку на сервер', self.log, self.bad_log)
                 for i, order in enumerate(orderity):
                     # Проверяем stdin
@@ -111,7 +111,7 @@ class aloader:
                         wj(self.driver)
                         if not elem:
                             raise NoDeliveryException
-                    # проверяем на наличие элемента в списке, если ни одного нет - пропускаем цикл
+                    # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
                     if order.get('check-with-name'):
                         elems = self.driver.find_elements_by_xpath(order['check-with-name'])
                         wj(self.driver)
@@ -213,26 +213,26 @@ class aloader:
                 complete_orderity = True
             except RequiredPartnerLinkException:
                 writelog(self.log, self.aid, 'Необходимо указать партнерскую ссылку - обратитесть к Вашему куратору',
-                         str(self.pid))
+                         self.pid)
                 post_status(self.post_url, self.aid, 5,  'Необходимо указать партнерскую ссылку - обратитесть к '
                             'Вашему куратору', self.log, self.bad_log)
                 raise
-            except NoDeliveryException(Exception):
+            except NoDeliveryException:
+                writelog(self.log, self.aid, 'Для Вашего города доставка курьером невозможна. После поступления СМС, '
+                         'пройдите по ссылке, указанной в нем и выберите удобное Вам место получения карты',
+                         self.pid)
+                post_status(self.post_url, self.aid, 11, 'Для Вашего города доставка курьером невозможна. После '
+                            'поступления СМС от банка, пройдите по ссылке, указанной в нем и выберите удобное Вам место'
+                            ' получения карты', self.log, self.bad_log)
+                raise
+            except RequiredDocumentException:
                 writelog(self.log, self.aid, 'Для Вашего региона необходимо предоставить один из документов: ' +
-                         documents + '.\n Исправьте заявку и отправьте её заново', str(self.pid))
-                post_status(self.post_url, self.aid, 11,  'Для Вашего региона необходимо предоставить один из '
+                         documents + '.\n Исправьте заявку и отправьте её заново', self.pid)
+                post_status(self.post_url, self.aid, 5,  'Для Вашего региона необходимо предоставить один из '
                             'документов: ' + documents + '.\n Исправьте заявку и отправьте её заново',
                             self.log, self.bad_log)
                 raise
             except KillException:
-                raise
-            except RequiredDocumentException:
-                writelog(self.log, self.aid, 'Для Вашего города доставка курьером невозможна. После поступления СМС, '
-                         'пройдите по ссылке, указанной в нем и выберите удобное Вам место получения карты',
-                         str(self.pid))
-                post_status(self.post_url, self.aid, 11, 'Для Вашего города доставка курьером невозможна. После '
-                            'поступления СМС от банка, пройдите по ссылке, указанной в нем и выберите удобное Вам место'
-                            ' получения карты', self.log, self.bad_log)
                 raise
             except Exception as e:
                 cycles_orderity += 1
@@ -252,18 +252,18 @@ class aloader:
                 nowtime = datetime.now()
                 stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
                 if formatting_error:
-                    writelog(self.bad_log, self.aid, tek_order['alfa'] + formatting_error, str(self.pid), nowtime)
+                    writelog(self.bad_log, self.aid, tek_order['alfa'] + formatting_error, self.pid, nowtime)
                     post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
                 else:
                     writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту.\nинформация для отдадки:'
-                             + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' + str(e), str(self.pid), nowtime)
+                             + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' + str(e), self.pid, nowtime)
                     post_status(self.post_url, self.aid, 5, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту', self.log, self.bad_log)
                 html_log = open(LOG_PATH + stamp + '.html', 'w')
                 html_elem = self.driver.find_element_by_xpath('//HTML')
                 html_log.write(html_elem.get_attribute('innerHTML'))
                 html_log.close()
                 self.driver.save_screenshot(LOG_PATH + stamp + '.png')
-                writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', str(self.pid), nowtime)
+                writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', self.pid, nowtime)
                 self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
                                            '","_blank");')
                 self.driver.switch_to.window(self.driver.window_handles[0])
@@ -288,12 +288,12 @@ class aloader:
                     elif current_html.find(' сек<!-- /react-text --></p>') > -1:
                         if last_state != 2:
                             last_state = 2
-                            writelog(self.log, self.aid, 'Ждем СМС', str(self.pid))
+                            writelog(self.log, self.aid, 'Ждем СМС', self.pid)
                             post_status(self.post_url, self.aid, 2, 'Ждем СМС', self.log, self.bad_log)
                     elif current_html.find('Запросить пароль повторно') > -1:
                         if last_state != 3:
                             last_state = 3
-                            writelog(self.log, self.aid, 'Ждем запроса на СМС', str(self.pid))
+                            writelog(self.log, self.aid, 'Ждем запроса на СМС', self.pid)
                             post_status(self.post_url, self.aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                         if last_state != 4:
@@ -306,7 +306,7 @@ class aloader:
                     else:
                         if last_state != 6:
                             last_state = 6
-                            writelog(self.log, self.aid, 'Непонятно чего ждем, похоже aloader сбился', str(self.pid))
+                            writelog(self.log, self.aid, 'Непонятно чего ждем, похоже aloader сбился', self.pid)
                     time.sleep(1)
                     ready, x, y = check_select([sys.stdin], [], [], 0)
                     if ready:
@@ -316,7 +316,7 @@ class aloader:
                     if bjson['__command']['type'] == 'confirm':
                         try:
                             self.current_stdin = ''
-                            writelog(self.log, self.aid, 'Получено СМС: ' + str(bjson), str(self.pid))
+                            writelog(self.log, self.aid, 'Получено СМС: ' + str(bjson), self.pid)
                             data4send = {'t': 'x', 's': smsity['Ввести СМС']}
                             elem = p(d=self.driver, f='p', **data4send)
                             wj(self.driver)
@@ -326,33 +326,33 @@ class aloader:
                             elem.send_keys(bjson['__command']['value'])
                             wj(self.driver)
                         except Exception as e:
-                            writelog(self.log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson), str(self.pid))
+                            writelog(self.log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson), self.pid)
                             #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
                             #                    sms_window = p(d=self.driver, f='p', **data4send)
                             #                    sms_window_htm = '\n-------- окошко запроса пароля --------\n' +\
                             #                                      sms_window.get_attribute('innerHTML')
                             sms_window_htm = ''
                             writelog(self.bad_log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson) +
-                                     sms_window_htm, str(self.pid))
+                                     sms_window_htm, self.pid)
                             post_status(self.post_url, self.aid, 5, 'Ошибка при отправлении СМС, повторите отправку',
                                         self.log, self.bad_log)
                     elif bjson['__command']['type'] == 'retry':
                         try:
                             self.current_stdin = ''
-                            writelog(self.log, self.aid, 'Получена заявка на запрос СМС: ' + str(bjson), str(self.pid))
+                            writelog(self.log, self.aid, 'Получена заявка на запрос СМС: ' + str(bjson), self.pid)
                             data4send = {'t': 'x', 's': smsity['Запросить пароль повторно']}
                             elem = p(d=self.driver, f='c', **data4send)
                             wj(self.driver)
                             elem.click()
                         except Exception as e:
-                            writelog(self.log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson), str(self.pid))
+                            writelog(self.log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson), self.pid)
         #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
         #                    sms_window = p(d=self.driver, f='p', **data4send)
         #                    sms_window_htm = '\n-------- окошко запроса пароля --------\n' +\
         #                                      sms_window.get_attribute('innerHTML')
                             sms_window_htm = ''
                             writelog(self.bad_log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson)
-                                     + sms_window_htm, str(self.pid))
+                                     + sms_window_htm, self.pid)
                             post_status(self.post_url, self.aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос',
                                         self.log, self.bad_log)
                     elif bjson['__command']['type'] == 'kill':
@@ -362,17 +362,17 @@ class aloader:
                 if datetime.now() - sms_start_time > timedelta(minutes=ALOADER_TIMEOUT):
                     client_timeout = True
             if server_timeout or client_timeout:
-                writelog(self.log, self.aid, 'Таймаут, нет правильной СМС', str(self.pid))
+                writelog(self.log, self.aid, 'Таймаут, нет правильной СМС', self.pid)
                 post_status(self.post_url, self.aid, 10, 'Таймаут, нет правильной СМС', self.log, self.bad_log)
             elif uspeh:
-                writelog(self.log, self.aid, 'Заявка выгружена', str(self.pid))
+                writelog(self.log, self.aid, 'Заявка выгружена', self.pid)
                 post_status(self.post_url, self.aid, 4, 'Заявка выгружена', self.log, self.bad_log)
         else:
             if loading:
                 post_status(self.post_url, self.aid, 5, 'Ошибка, повторите отправку', self.log, self.bad_log)
             else:
                 post_status(self.post_url, self.aid, 5, 'Ошибка, повторите отправку', self.log, self.bad_log)
-                writelog(self.log, self.aid, 'Вылетел с неизвестной ошибкой', str(self.pid))
+                writelog(self.log, self.aid, 'Вылетел с неизвестной ошибкой', self.pid)
 
 
 al = aloader()
@@ -387,7 +387,7 @@ except RequiredPartnerLinkException:
 except NoDeliveryException:
     pass
 except Exception as e:
-    writelog(al.log, al.aid, 5, 'Вылетел с ошибкой: ' + str(e), str(al.pid))
+    writelog(al.log, al.aid, 5, 'Вылетел с ошибкой: ' + str(e), al.pid)
     post_status(al.post_url, al.aid, 5, 'Ошибка, повторите последнее действие', al.log, al.bad_log)
 finally:
     del al
