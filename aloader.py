@@ -132,6 +132,13 @@ class aloader:
                         wj(self.driver)
                         if elem:
                             continue
+                    # проверяем на наличие элемента, если нет - ждем пока не появится
+                    if order.get('check-until'):
+                        data4send = {'t': 'x', 's': order['check-until']}
+                        elem = p(d=self.driver, f='p', **data4send)
+                        wj(self.driver)
+                        while not elem:
+                            pass
                     if order.get('pre-click'):
                         data4send = {'t': 'x', 's': order['pre-click']}
                         elem = p(d=self.driver, f='c', **data4send)
