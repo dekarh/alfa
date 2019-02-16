@@ -111,21 +111,6 @@ class aloader:
                         wj(self.driver)
                         if not elem:
                             raise NoDeliveryException
-                    # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
-                    if order.get('check-with-name'):
-                        elems = self.driver.find_elements_by_xpath(order['check-with-name'])
-                        wj(self.driver)
-                        if fromSQL == None and len(elems):
-                            raise RequiredDocumentException
-                        has_name = False
-                        documents = ''
-                        for elem in elems:
-                            documents += ', ' + elem.text
-                            if elem.text.find(order['alfa']) > -1:
-                                has_name = True
-                        documents = documents.strip(',').strip()
-                        if len(elems) and not has_name:
-                            raise RequiredDocumentException
                     if order.get('check-absence'):
                         data4send = {'t': 'x', 's': order['check-absence']}
                         elem = p(d=self.driver, f='p', **data4send)
@@ -144,6 +129,23 @@ class aloader:
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()
+                    # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
+                    if order.get('check-with-name'):
+                        elems = self.driver.find_elements_by_xpath(order['check-with-name'])
+                        wj(self.driver)
+                        has_name = False
+                        documents = ''
+                        for elem in elems:
+                            if elem.text and elem.text !='Не могу предоставить':
+                                documents += ', ' + elem.text
+                                if fromSQL:
+                                    if elem.text.find(fromSQL) > -1:
+                                        has_name = True
+                        documents = documents.strip(',').strip()
+                        if fromSQL == None and len(elems):
+                            raise RequiredDocumentException
+                        if len(elems) and not has_name:
+                            raise RequiredDocumentException
                     if order.get('pre-wait'):
                         time.sleep(order['pre-wait'])
                     if order.get('click'):

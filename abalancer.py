@@ -16,6 +16,7 @@ import json, requests
 def callback(ch, method, properties, body):
     # принимаем json из рэббита
     ajson = json.loads(bytes.decode(body))
+    #ajson_dump = json.dumps(ajson)
     #print(body)
     #print(str(ajson))
     aid = ajson['click_id']
