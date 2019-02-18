@@ -95,13 +95,15 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="creditLimit"]',
      'post-click': '//H3'},
     {'alfa': 'Второй документ, удостоверяющий личность', 'SQL': ['second_document'],
-     'check': '//SPAN[@class="select__top"][text()="Второй документ, удостоверяющий личность"]',
+     'check-absence': '//DIV[contains(@class,"part_hidden")]//SPAN[@class="select__top"]'
+                      '[text()="Второй документ, удостоверяющий личность"]',
      'pre-click': '//SPAN[@class="select__top"][text()="Второй документ, удостоверяющий личность"]/..',
      'check-with-name': '//SPAN[@class="menu-item__control"]',
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
      'post-click': '//H3'},
     {'alfa': 'Документ, подтверждающий доход', 'SQL': ['salary_confirmation'],
-     'check': '//SPAN[@class="select__top"][text()="Документ, подтверждающий доход"]',
+     'check-absence': '//DIV[contains(@class,"part_hidden")]//SPAN[@class="select__top"]'
+                      '[text()="Документ, подтверждающий доход"]',
      'pre-click': '//SPAN[@class="select__top"][text()="Документ, подтверждающий доход"]/..',
      'check-with-name': '//SPAN[@class="menu-item__control"]',
      'click-text-up': '//SPAN[@class="menu-item__control"][text()="',

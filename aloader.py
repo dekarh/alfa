@@ -237,7 +237,7 @@ class aloader:
             except RequiredDocumentException:
                 writelog(self.log, self.aid, 'Для Вашего региона необходимо предоставить один из документов: ' +
                          documents + '.\n Исправьте заявку и отправьте её заново', self.pid)
-                post_status(self.post_url, self.aid, 5,  'Для Вашего региона необходимо предоставить один из '
+                post_status(self.post_url, self.aid, 11,  'Для Вашего региона необходимо предоставить один из '
                             'документов: ' + documents + '.\n Исправьте заявку и отправьте её заново',
                             self.log, self.bad_log)
                 raise
