@@ -117,6 +117,11 @@ class aloader:
                         wj(self.driver)
                         if elem:
                             continue
+                    if order.get('pre-click'):
+                        data4send = {'t': 'x', 's': order['pre-click']}
+                        elem = p(d=self.driver, f='c', **data4send)
+                        wj(self.driver)
+                        elem.click()
                     # проверяем на наличие элемента, если нет - ждем пока не появится
                     if order.get('check-until'):
                         data4send = {'t': 'x', 's': order['check-until']}
@@ -124,11 +129,13 @@ class aloader:
                         wj(self.driver)
                         while not elem:
                             pass
-                    if order.get('pre-click'):
-                        data4send = {'t': 'x', 's': order['pre-click']}
-                        elem = p(d=self.driver, f='c', **data4send)
+                    # проверяем заполненность поля input, если текст есть - пропускаем цикл
+                    if order.get('check-value'):
+                        data4send = {'t': 'x', 's': order['check-value']}
+                        elem = p(d=self.driver, f='p', **data4send)
                         wj(self.driver)
-                        elem.click()
+                        if elem.get_attribute('value'):
+                            continue
                     # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
                     if order.get('check-with-name'):
                         elems = self.driver.find_elements_by_xpath(order['check-with-name'])
