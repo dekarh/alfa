@@ -15,7 +15,7 @@ import requests
 import time
 
 from alfa_env import DRIVER_PATH, LOG_FILE, BAD_TRANSACTION_LOG_FILE, LOG_PATH, orderity, writelog, CYCLES_ORDERITY
-from alfa_env import post_status, ALOADER_TIMEOUT, smsity
+from alfa_env import post_status, ALOADER_TIMEOUT, smsity, DEBUG
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
 
@@ -39,7 +39,8 @@ class RequiredPartnerLinkException(Exception):
 class aloader:
     def __init__(self): # Конструктор класса
         opts = Options()
-        #opts.headless=True # Невидимый режим браузера - пока выключим
+        if not DEBUG:
+            opts.headless=True # Невидимый режим браузера
         self.driver = webdriver.Chrome(DRIVER_PATH, options=opts)
         self.driver.implicitly_wait(10)
         self.driver.stop_client()
@@ -234,12 +235,13 @@ class aloader:
                             'Вашему куратору', self.log, self.bad_log)
                 raise
             except NoDeliveryException:
-                writelog(self.log, self.aid, 'Для Вашего города доставка курьером невозможна. После поступления СМС, '
-                         'пройдите по ссылке, указанной в нем и выберите удобное Вам место получения карты',
-                         self.pid)
-                post_status(self.post_url, self.aid, 11, 'Для Вашего города доставка курьером невозможна. После '
+                writelog(self.log, self.aid, 'Для Вашего города доставка курьером невозможна. После '
                             'поступления СМС от банка, пройдите по ссылке, указанной в нем и выберите удобное Вам место'
-                            ' получения карты', self.log, self.bad_log)
+                            ' получения карты', self.pid)
+                post_status(self.post_url, self.aid, 11, 'Нужно сказать клиенту: Для этого города доставка курьером невозможна. '
+                                             'Мы для Вас заполнили заявку. В течении часа Вам придет СМС со ссылкой на'
+                                             'заплненную заявку. Пройдите по ссылке, и выберите удобное Вам место '
+                                             'получения карты', self.log, self.bad_log)
                 raise
             except RequiredDocumentException:
                 writelog(self.log, self.aid, 'Для Вашего региона необходимо предоставить один из документов: ' +
