@@ -5,7 +5,7 @@ import json, requests
 from datetime import datetime
 
 # DRIVER_PATH = 'drivers/chromedriver.exe'
-DRIVER_PATH = '/usr/lib/chromium-browser/chromedriver'
+DRIVER_PATH = '/usr/bin/chromedriver'
 LOG_PATH = 'logs/'
 LOG_FILE = 'rabbit_transfer.log'
 BAD_TRANSACTION_LOG_FILE = 'rabbit_bad_transactions.log'
