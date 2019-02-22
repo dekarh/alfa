@@ -229,8 +229,8 @@ class aloader:
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()
-                        stamp = self.aid + '(' + str(self.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
-                        self.driver.save_screenshot(LOG_PATH + stamp + '.png')
+#                        stamp = self.aid + '(' + str(self.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+#                        self.driver.save_screenshot(LOG_PATH + stamp + '.png')
                     if fromSQL and order.get('radio-select'):
                         sel = -1
                         for j, select in enumerate(order['radio-select-input']):
