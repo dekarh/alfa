@@ -53,7 +53,7 @@ def callback(ch, method, properties, body):
         # а мы их уже обновили/удалили в предыдущем цикле, поэтому просто печатаем
         if len(procs):
             for proc in procs:
-                logging.warning(proc + ' - ' + procs[proc].pid)
+                logging.warning(proc + ' - ' + str(procs[proc].pid))
         else:
             logging.warning("нет работающих aloader'ов")
             if '.reboot' in os.listdir():
@@ -166,7 +166,7 @@ try:
 except KeyboardInterrupt:
     pass
 except Exception as e:
-    logging.warning('Ошибка: ' + e)
+    logging.warning('Ошибка: ' + str(e))
 finally:
     bad_log.close()
     log.close()
