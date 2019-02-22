@@ -155,7 +155,7 @@ parameters = pika.ConnectionParameters(credentials=credentials, **rabbiturl)
 connection = pika.BlockingConnection(parameters=parameters)
 channel = connection.channel()
 
-channel.queue_declare(queue='alfabank_100', durable=True)
+#channel.queue_declare(queue='alfabank_100', durable=True)
 logging.warning(' [*] Waiting for messages. To exit press CTRL+C')
 
 channel.basic_qos(prefetch_count=1)

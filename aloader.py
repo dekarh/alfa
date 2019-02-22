@@ -36,6 +36,18 @@ class RequiredPartnerLinkException(Exception):
     pass
 
 
+class ServerTimeOutException(Exception):
+    pass
+
+
+class UspehException(Exception):
+    pass
+
+
+class TrasferErrorException(Exception):
+    pass
+
+
 class aloader:
     def __init__(self): # Конструктор класса
         opts = Options()
@@ -91,6 +103,17 @@ class aloader:
                             self.current_stdin = ''
                             raise KillException
                     tek_order = order
+                    wj(self.driver)
+                    current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
+                    if current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
+                        raise ServerTimeOutException
+                    if current_html.find('Ваши дальнейшие шаги') > -1:
+                        writelog(self.log, self.aid, 'Банк прервал транcфер заявки, чтобы уточнить некоторые данные '
+                                 'лично у Вас. Ожидайте звонка из Альфа-Банка', self.pid)
+                        post_status(self.post_url, self.aid, 11, 'Банк прервал транcфер заявки, чтобы уточнить '
+                                    'некоторые данные лично у Вас. Ожидайте звонка из Альфа-Банка', self.log,
+                                    self.bad_log)
+                        raise UspehException
                     fromSQL = ''
                     if order.get('SQL'):            # "Разворачиваем" любой уровень вложенности json
                         fromSQL = ajson
@@ -228,6 +251,8 @@ class aloader:
                     if order.get('loaded'):
                         post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
                 complete_orderity = True
+            except ServerTimeOutException:
+                raise
             except RequiredPartnerLinkException:
                 writelog(self.log, self.aid, 'Необходимо указать партнерскую ссылку - обратитесть к Вашему куратору',
                          self.pid)
@@ -252,6 +277,8 @@ class aloader:
                 raise
             except KillException:
                 raise
+            except UspehException:
+                raise
             except Exception as e:
                 cycles_orderity += 1
                 data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
@@ -273,9 +300,10 @@ class aloader:
                     writelog(self.bad_log, self.aid, tek_order['alfa'] + formatting_error, self.pid, nowtime)
                     post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
                 else:
-                    writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту.\nинформация для отдадки:'
-                             + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' + str(e), self.pid, nowtime)
-                    post_status(self.post_url, self.aid, 5, 'Ошибка транспорта: Отправьте заявку заново через 1 минуту', self.log, self.bad_log)
+                    writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново.\n'
+                            'информация для отладки:' + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' +
+                             str(e), self.pid, nowtime)
+                    raise TrasferErrorException
                 html_log = open(LOG_PATH + stamp + '.html', 'w')
                 html_elem = self.driver.find_element_by_xpath('//HTML')
                 html_log.write(html_elem.get_attribute('innerHTML'))
@@ -314,13 +342,9 @@ class aloader:
                             writelog(self.log, self.aid, 'Ждем запроса на СМС', self.pid)
                             post_status(self.post_url, self.aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
-                        if last_state != 4:
-                            last_state = 4
-                            server_timeout = True
+                        raise ServerTimeOutException
                     elif current_html.find('Ваши дальнейшие шаги:') > -1:
-                        if last_state != 5:
-                            last_state = 5
-                            uspeh = True
+                        raise UspehException
                     else:
                         if last_state != 6:
                             last_state = 6
@@ -378,16 +402,10 @@ class aloader:
                         raise KillException
 
                 if datetime.now() - sms_start_time > timedelta(minutes=ALOADER_TIMEOUT):
-                    client_timeout = True
-            if server_timeout or client_timeout:
-                writelog(self.log, self.aid, 'Таймаут, нет правильной СМС', self.pid)
-                post_status(self.post_url, self.aid, 10, 'Таймаут, нет правильной СМС', self.log, self.bad_log)
-            elif uspeh:
-                writelog(self.log, self.aid, 'Заявка выгружена', self.pid)
-                post_status(self.post_url, self.aid, 4, 'Заявка выгружена', self.log, self.bad_log)
+                    raise ServerTimeOutException
         else:
             if loading:
-                post_status(self.post_url, self.aid, 5, 'Ошибка, повторите отправку', self.log, self.bad_log)
+                raise TrasferErrorException
             else:
                 post_status(self.post_url, self.aid, 5, 'Ошибка, повторите отправку', self.log, self.bad_log)
                 writelog(self.log, self.aid, 'Вылетел с неизвестной ошибкой', self.pid)
@@ -404,6 +422,15 @@ except RequiredPartnerLinkException:
     pass
 except NoDeliveryException:
     pass
+except ServerTimeOutException:
+    writelog(al.log, al.aid, 'Таймаут, нет правильной СМС', al.pid)
+    post_status(al.post_url, al.aid, 10, 'Таймаут, нет правильной СМС', al.log, al.bad_log)
+except TrasferErrorException:
+    post_status(al.post_url, al.aid, 5, 'Ошибка трансфера на сервер, отправьте заявку заново', al.log,
+                al.bad_log)
+except UspehException as e:
+    writelog(al.log, al.aid, 'Заявка выгружена', al.pid)
+    post_status(al.post_url, al.aid, 4, 'Заявка выгружена', al.log, al.bad_log)
 except Exception as e:
     writelog(al.log, al.aid, 5, 'Вылетел с ошибкой: ' + str(e), al.pid)
     post_status(al.post_url, al.aid, 5, 'Ошибка, повторите последнее действие', al.log, al.bad_log)

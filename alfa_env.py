@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.02'
+VERSION = 'v1.03-22.02.2019'
 
 # список очерёдности
 orderity = [
@@ -47,12 +47,12 @@ orderity = [
      'pre-click': '//SPAN[@class="input__top"][text()="Код подразделения"]/..',
      'input': '//INPUT[@class="input__control"][@name="passportIssuedCode"]',
      'post-click': '//H3'},
-    {'alfa': 'Кем выдан', 'SQL': ['passport_police'], 'post-wait': 1,
+    {'alfa': 'Кем выдан', 'SQL': ['passport_police'],
      'check-until': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'check-value': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'input': '//TEXTAREA[@class="textarea__control"][@name="passportIssuedBy"]',
      'post-click': '//H3'},
-    {'alfa': 'Дата рождения', 'SQL': ['birth_date'],'pre-wait': 1, 'post-wait': 1,
+    {'alfa': 'Дата рождения', 'SQL': ['birth_date'],
      'pre-click': '//SPAN[@class="input__top"][text()="Дата рождения"]/..',
      'input': '//INPUT[@class="input__control"][@name="birthDate"]',
      'post-click': '//H3'},
@@ -142,7 +142,7 @@ orderity = [
      'radio-select': ['//SPAN[@class="radio__title"][text()="Сегодня"]/..',
                       '//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..'],
      'radio-select-input': ['Сегодня (Без фамилии и имени на карте)', 'Через 1-3 дня (С фамилией и именем на карте)']},
-    {'alfa': 'Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)', 'SQL': ['allow_night_calls'],
+    {'alfa': 'Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)', 'SQL': ['allow_night_calls'], 'pre-wait': 2,
      'check-until': '//SPAN[text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]',
      'checkbox': '//SPAN[text()="Разрешаю мне звонить с 22:00 до 8:00 (в ночное время)"]', 'loaded': '100%'},
     # ------------------------------------------------ Отправить заявку ---------------------
