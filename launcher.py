@@ -13,12 +13,19 @@ abalancer = os.path.join(os.path.dirname(__file__), "abalancer.py")
 i = 0
 while i == 0:
     has_abalancer = False
-    for p in psutil.process_iter():
-        if p.name() == 'python3' and 'launcher.py' in ' '.join(p.cmdline()) and p.pid != pid_launcher:
-            sys.exit()  # проверяем наличие второго launch_abalancer.py, если есть - выходим
-        if ('abalancer.py' in p.name() or 'abalancer.py' in ' '.join(p.cmdline())):
-            has_abalancer = True
-            break
+    checked = False
+    while not checked:
+        try:
+            for p in psutil.process_iter():
+                if p.name() == 'python3' and 'launcher.py' in ' '.join(p.cmdline()) and p.pid != pid_launcher:
+                    sys.exit()  # проверяем наличие второго launch_abalancer.py, если есть - выходим
+                if ('abalancer.py' in p.name() or 'abalancer.py' in ' '.join(p.cmdline())):
+                    has_abalancer = True
+                    break
+        except FileNotFoundError:
+            pass
+        except psutil.NoSuchProcess:
+            pass
     if has_abalancer: # если в процессах есть abalancer.py
         time.sleep(0.5)
     else:

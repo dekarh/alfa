@@ -167,6 +167,7 @@ except KeyboardInterrupt:
     pass
 except Exception as e:
     logging.warning('Ошибка: ' + str(e))
+    time.sleep(10)
 finally:
     bad_log.close()
     log.close()
