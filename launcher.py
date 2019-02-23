@@ -22,6 +22,7 @@ while i == 0:
                 if ('abalancer.py' in p.name() or 'abalancer.py' in ' '.join(p.cmdline())):
                     has_abalancer = True
                     break
+            checked = True
         except FileNotFoundError:
             pass
         except psutil.NoSuchProcess:
