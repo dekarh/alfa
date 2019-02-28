@@ -220,7 +220,7 @@ class aloader:
                         wj(self.driver)
                         elem.click()
                     if fromSQL and order.get('click-text-up'):
-                        data4send = {'t': 'x', 's': order['click-text-up'] + str(fromSQL) + '"]/..'}
+                        data4send = {'t': 'x', 's': order['click-text-up'] + str(fromSQL) + '")]/..'}
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()

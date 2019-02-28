@@ -32,9 +32,11 @@ orderity = [
     {'alfa': 'Электронная почта', 'SQL': ['e_mail'], 'pre-click': '//SPAN[@class="input__top"][text()="Электронная почта"]/..',
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
     {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@placeholder="Регион работы"]',
-     'click-text-up': '//SPAN[@class="menu-item__control"][text()="', 'post-click': '//DIV[contains(@class,"landing-page")]'},
+     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//DIV[contains(@class,"landing-page")]'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '18%'},
+    #------------------------------------------------ дубль страницы 1 ---------------------
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
-    #------------------------------------------------ страница 2 ---------------------
+    # ------------------------------------------------ страница 2 ---------------------
     {'alfa': 'Серия', 'SQL': ['passport_seria'], 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
      'post-click': '//H3'},
     {'alfa': 'Номер', 'SQL': ['passport_number'], 'input': '//INPUT[@class="input__control"][@name="passportNumber"]',
@@ -62,7 +64,7 @@ orderity = [
      'post-click': '//H3'},
     {'alfa': 'Регион регистрации', 'SQL': ['registration_region'],
      'pre-click': '//SPAN[@class="input__top"][text()="Регион регистрации"]/..',
-     'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
+     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'post-click': '//H3'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '40%'},
     #------------------------------------------------ страница 3 ---------------------
@@ -101,14 +103,14 @@ orderity = [
                       '[text()="Второй документ, удостоверяющий личность"]',
      'pre-click': '//SPAN[@class="select__top"][text()="Второй документ, удостоверяющий личность"]/..',
      'check-with-name': '//SPAN[@class="menu-item__control"]',
-     'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
+     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'post-click': '//H3'},
     {'alfa': 'Документ, подтверждающий доход', 'SQL': ['salary_confirmation'],
      'check-absence': '//DIV[contains(@class,"part_hidden")]//SPAN[@class="select__top"]'
                       '[text()="Документ, подтверждающий доход"]',
      'pre-click': '//SPAN[@class="select__top"][text()="Документ, подтверждающий доход"]/..',
      'check-with-name': '//SPAN[@class="menu-item__control"]',
-     'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
+     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'post-click': '//H3'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '80%'},
     # ------------------------------------------------ страница 5 ---------------------
@@ -134,7 +136,7 @@ orderity = [
      'post-click': '//H3'},
     {'alfa': 'Город получения карты', 'SQL': ['city'],
      'pre-click': '//SPAN[@class="input__top"][text()="Город получения карты"]/..',
-     'click-text-up': '//SPAN[@class="menu-item__control"][text()="',
+     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'post-click': '//H3'},
     {'alfa': 'Выберите город и способ получения карты', 'check-delivery':'//SPAN[text()="Курьером бесплатно"]',
      'click': '//SPAN[@class="title"][text()="Курьером бесплатно"]/..'},
