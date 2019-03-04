@@ -146,6 +146,12 @@ class aloader:
                         elem = p(d=self.driver, f='c', **data4send)
                         wj(self.driver)
                         elem.click()
+                    if order.get('check-has-menu'):
+                        data4send = {'t': 'x', 's': order['check-has-menu'] + str(fromSQL) + '")]/..'}
+                        elem = p(d=self.driver, f='p', **data4send)
+                        wj(self.driver)
+                        if not elem:
+                            raise NoDeliveryException
                     # проверяем на наличие элемента, если нет - ждем пока не появится
                     if order.get('check-until'):
                         data4send = {'t': 'x', 's': order['check-until']}

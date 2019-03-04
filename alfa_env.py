@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.05-01.03.2019'
+VERSION = 'v1.06-04.03.2019'
 
 # список очерёдности
 orderity = [
@@ -136,6 +136,7 @@ orderity = [
      'post-click': '//H3'},
     {'alfa': 'Город получения карты', 'SQL': ['city'],
      'pre-click': '//SPAN[@class="input__top"][text()="Город получения карты"]/..',
+     'check-has-menu': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'post-click': '//H3'},
     {'alfa': 'Выберите город и способ получения карты', 'check-delivery':'//SPAN[text()="Курьером бесплатно"]',
