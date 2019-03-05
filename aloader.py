@@ -287,6 +287,18 @@ class aloader:
             except UspehException:
                 raise
             except Exception as e:
+                time.sleep(1)
+                current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
+                if current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
+                    raise ServerTimeOutException
+                if current_html.find('Ваши дальнейшие шаги') > -1:
+                    writelog(self.log, self.aid, 'Банк прервал транcфер заявки, чтобы уточнить некоторые данные '
+                                                 'лично у Вас. Ожидайте звонка из Альфа-Банка', self.pid)
+                    post_status(self.post_url, self.aid, 11, 'Банк прервал транcфер заявки, чтобы уточнить '
+                                                             'некоторые данные лично у Вас. Ожидайте звонка из Альфа-Банка',
+                                self.log,
+                                self.bad_log)
+                    raise UspehException
                 cycles_orderity += 1
                 data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
                              'a': 'text'}
