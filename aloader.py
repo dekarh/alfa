@@ -65,6 +65,150 @@ class aloader:
         self.bad_log.close()
         self.log.close()
 
+    def use_order(self, order, ajson):
+        fromSQL = ''
+        if order.get('SQL'):  # "Разворачиваем" любой уровень вложенности json
+            fromSQL = ajson
+            for stepSQL in order['SQL']:
+                fromSQL = fromSQL[stepSQL]
+        # проверяем на наличие элемента, если нет - пропускаем цикл
+        if order.get('check'):
+            data4send = {'t': 'x', 's': order['check']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            if not elem:
+                return
+            if elem.get_attribute('value'):
+                return
+        # проверяем есть ли доставка курьером, если нет - исключение
+        if order.get('check-delivery'):
+            data4send = {'t': 'x', 's': order['check-delivery']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            if not elem:
+                raise NoDeliveryException
+        if order.get('check-absence'):
+            data4send = {'t': 'x', 's': order['check-absence']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            if elem:
+                return
+        if order.get('pre-click'):
+            data4send = {'t': 'x', 's': order['pre-click']}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            elem.click()
+        if order.get('check-has-menu'):
+            data4send = {'t': 'x', 's': order['check-has-menu'] + str(fromSQL) + '")]/..'}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            if not elem:
+                raise NoDeliveryException
+        # проверяем на наличие элемента, если нет - ждем пока не появится
+        if order.get('check-until'):
+            data4send = {'t': 'x', 's': order['check-until']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            while not elem:
+                pass
+        # проверяем заполненность поля input, если текст есть - пропускаем цикл
+        if order.get('check-value'):
+            data4send = {'t': 'x', 's': order['check-value']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            if elem.get_attribute('value'):
+                return
+        # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
+        if order.get('check-with-name'):
+            elems = self.driver.find_elements_by_xpath(order['check-with-name'])
+            wj(self.driver)
+            has_name = False
+            documents = ''
+            for elem in elems:
+                if elem.text and elem.text != 'Не могу предоставить':
+                    documents += ', ' + elem.text
+                    if fromSQL:
+                        if elem.text.find(fromSQL) > -1:
+                            has_name = True
+            documents = documents.strip(',').strip()
+            if fromSQL == None and len(elems):
+                raise RequiredDocumentException
+            if len(elems) and not has_name:
+                raise RequiredDocumentException
+        if order.get('pre-wait'):
+            time.sleep(order['pre-wait'])
+        if order.get('click'):
+            data4send = {'t': 'x', 's': order['click']}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            elem.click()
+        if fromSQL and order.get('input'):
+            data4send = {'t': 'x', 's': order['input']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            #                elem.send_keys(' ')
+            #                elem.clear()
+            elem.send_keys(fromSQL)
+            wj(self.driver)
+        if fromSQL and order.get('input-tel'):
+            data4send = {'t': 'x', 's': order['input-tel']}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            elem.send_keys(' ')
+            elem.clear()
+            elem.send_keys(' ')
+            elem.send_keys(fromSQL[1:])
+            wj(self.driver)
+        if fromSQL and order.get('char-input'):
+            data4send = {'t': 'x', 's': order['char-input']}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            for char in s(fromSQL):
+                elem.send_keys(char)
+            wj(self.driver)
+        if str(fromSQL) != 'None' and str(order.get('select')) != 'None':
+            if len(order['select']) >= int(fromSQL):
+                data4send = {'t': 'x', 's': order['select'][int(fromSQL)]}
+                elem = p(d=self.driver, f='c', **data4send)
+                wj(self.driver)
+                elem.click()
+        if fromSQL and order.get('click-text'):
+            data4send = {'t': 'x', 's': order['click-text'] + str(fromSQL) + '"]'}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            elem.click()
+        if fromSQL and order.get('click-text-up'):
+            data4send = {'t': 'x', 's': order['click-text-up'] + str(fromSQL) + '")]/..'}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            elem.click()
+        if l(fromSQL) == 1 and order.get('checkbox'):
+            data4send = {'t': 'x', 's': order['checkbox']}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            elem.click()
+        #                        stamp = self.aid + '(' + str(self.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+        #                        self.driver.save_screenshot(LOG_PATH + stamp + '.png')
+        if fromSQL and order.get('radio-select'):
+            sel = -1
+            for j, select in enumerate(order['radio-select-input']):
+                if fromSQL == select:
+                    sel = j
+            if sel > -1:
+                data4send = {'t': 'x', 's': order['radio-select'][sel]}
+                elem = p(d=self.driver, f='c', **data4send)
+                wj(self.driver)
+                elem.click()
+        if order.get('post-wait'):
+            time.sleep(order['post-wait'])
+        if order.get('post-click'):
+            data4send = {'t': 'x', 's': order['post-click']}
+            elem = p(d=self.driver, f='c', **data4send)
+            wj(self.driver)
+            elem.click()
+        if order.get('loaded'):
+            post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
+
     def base(self):
         webconfig = read_config(filename='alfa.ini', section='web')
         fillconfig = read_config(filename='alfa.ini', section='fill')
@@ -84,15 +228,18 @@ class aloader:
         complete_orderity = False
         cycles_orderity = 0
         formatting_error = ''
-        tek_order = orderity[0]
+        tek_i = 0
         while (not complete_orderity) and cycles_orderity <= CYCLES_ORDERITY and loading:
             documents = ''
             try:
                 # Начинаем заполнять
                 writelog(self.log, self.aid, 'Начинаем заполнять по ссылке' + ajson['__landing_url'] + '&afclick=' +
                          ajson['click_id'] + str(ajson), self.pid)
-                post_status(self.post_url, self.aid, 1, 'Начинаем выгрузку на сервер', self.log, self.bad_log)
-                for i, order in enumerate(orderity):
+                if not tek_i:
+                    post_status(self.post_url, self.aid, 1, 'Начинаем выгрузку на сервер', self.log, self.bad_log)
+                for i in range(tek_i, len(orderity) - 1):
+                    order = orderity[i]
+                    tek_i = i
                     # Проверяем stdin
                     ready, x, y = check_select([sys.stdin], [], [], 0)
                     if ready:
@@ -102,8 +249,8 @@ class aloader:
                         if bjson['__command']['type'] == 'kill':
                             self.current_stdin = ''
                             raise KillException
-                    tek_order = order
                     wj(self.driver)
+                    # Проверяем на всякие неожиданности
                     current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
                     if current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                         raise ServerTimeOutException
@@ -114,148 +261,11 @@ class aloader:
                                     'некоторые данные лично у Вас. Ожидайте звонка из Альфа-Банка', self.log,
                                     self.bad_log)
                         raise UspehException
-                    fromSQL = ''
-                    if order.get('SQL'):            # "Разворачиваем" любой уровень вложенности json
-                        fromSQL = ajson
-                        for stepSQL in order['SQL']:
-                            fromSQL = fromSQL[stepSQL]
-                    # проверяем на наличие элемента, если нет - пропускаем цикл
-                    if order.get('check'):
-                        data4send = {'t': 'x', 's': order['check']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        if not elem:
-                            continue
-                        if elem.get_attribute('value'):
-                            continue
-                    # проверяем есть ли доставка курьером, если нет - исключение
-                    if order.get('check-delivery'):
-                        data4send = {'t': 'x', 's': order['check-delivery']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        if not elem:
-                            raise NoDeliveryException
-                    if order.get('check-absence'):
-                        data4send = {'t': 'x', 's': order['check-absence']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        if elem:
-                            continue
-                    if order.get('pre-click'):
-                        data4send = {'t': 'x', 's': order['pre-click']}
-                        elem = p(d=self.driver, f='c', **data4send)
+                    if current_html.find('Хотите ускорить заполнение?') > -1:
+                        elem = self.driver.find_element_by_xpath('//SPAN[@class="link__text"][text()="Продолжить заполнение"]')
                         wj(self.driver)
                         elem.click()
-                    if order.get('check-has-menu'):
-                        data4send = {'t': 'x', 's': order['check-has-menu'] + str(fromSQL) + '")]/..'}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        if not elem:
-                            raise NoDeliveryException
-                    # проверяем на наличие элемента, если нет - ждем пока не появится
-                    if order.get('check-until'):
-                        data4send = {'t': 'x', 's': order['check-until']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        while not elem:
-                            pass
-                    # проверяем заполненность поля input, если текст есть - пропускаем цикл
-                    if order.get('check-value'):
-                        data4send = {'t': 'x', 's': order['check-value']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        if elem.get_attribute('value'):
-                            continue
-                    # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
-                    if order.get('check-with-name'):
-                        elems = self.driver.find_elements_by_xpath(order['check-with-name'])
-                        wj(self.driver)
-                        has_name = False
-                        documents = ''
-                        for elem in elems:
-                            if elem.text and elem.text !='Не могу предоставить':
-                                documents += ', ' + elem.text
-                                if fromSQL:
-                                    if elem.text.find(fromSQL) > -1:
-                                        has_name = True
-                        documents = documents.strip(',').strip()
-                        if fromSQL == None and len(elems):
-                            raise RequiredDocumentException
-                        if len(elems) and not has_name:
-                            raise RequiredDocumentException
-                    if order.get('pre-wait'):
-                        time.sleep(order['pre-wait'])
-                    if order.get('click'):
-                        data4send = {'t': 'x', 's': order['click']}
-                        elem = p(d=self.driver, f='c', **data4send)
-                        wj(self.driver)
-                        elem.click()
-                    if fromSQL and order.get('input'):
-                        data4send = {'t': 'x', 's': order['input']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-        #                elem.send_keys(' ')
-        #                elem.clear()
-                        elem.send_keys(fromSQL)
-                        wj(self.driver)
-                    if fromSQL and order.get('input-tel'):
-                        data4send = {'t': 'x', 's': order['input-tel']}
-                        elem = p(d=self.driver, f='p', **data4send)
-                        wj(self.driver)
-                        elem.send_keys(' ')
-                        elem.clear()
-                        elem.send_keys(' ')
-                        elem.send_keys(fromSQL[1:])
-                        wj(self.driver)
-                    if fromSQL and order.get('char-input'):
-                        data4send = {'t': 'x', 's': order['char-input']}
-                        elem = p(d=self.driver, f='c', **data4send)
-                        wj(self.driver)
-                        for char in s(fromSQL):
-                            elem.send_keys(char)
-                        wj(self.driver)
-                    if str(fromSQL) != 'None' and str(order.get('select')) != 'None':
-                        if len(order['select']) >= int(fromSQL):
-                            data4send = {'t': 'x', 's': order['select'][int(fromSQL)]}
-                            elem = p(d=self.driver, f='c', **data4send)
-                            wj(self.driver)
-                            elem.click()
-                    if fromSQL and order.get('click-text'):
-                        data4send = {'t': 'x', 's': order['click-text'] + str(fromSQL) + '"]'}
-                        elem = p(d=self.driver, f='c', **data4send)
-                        wj(self.driver)
-                        elem.click()
-                    if fromSQL and order.get('click-text-up'):
-                        data4send = {'t': 'x', 's': order['click-text-up'] + str(fromSQL) + '")]/..'}
-                        elem = p(d=self.driver, f='c', **data4send)
-                        wj(self.driver)
-                        elem.click()
-                    if l(fromSQL) == 1 and order.get('checkbox'):
-                        data4send = {'t': 'x', 's': order['checkbox']}
-                        elem = p(d=self.driver, f='c', **data4send)
-                        wj(self.driver)
-                        elem.click()
-#                        stamp = self.aid + '(' + str(self.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
-#                        self.driver.save_screenshot(LOG_PATH + stamp + '.png')
-                    if fromSQL and order.get('radio-select'):
-                        sel = -1
-                        for j, select in enumerate(order['radio-select-input']):
-                            if fromSQL == select:
-                                sel = j
-                        if sel > -1:
-                            data4send = {'t': 'x', 's': order['radio-select'][sel]}
-                            elem = p(d=self.driver, f='c', **data4send)
-                            wj(self.driver)
-                            elem.click()
-                    if order.get('post-wait'):
-                        time.sleep(order['post-wait'])
-                    if order.get('post-click'):
-                        data4send = {'t': 'x', 's': order['post-click']}
-                        elem = p(d=self.driver, f='c', **data4send)
-                        wj(self.driver)
-                        elem.click()
-                    if order.get('loaded'):
-                        post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
+                    self.use_order(order, ajson)
                 complete_orderity = True
             except ServerTimeOutException:
                 raise
@@ -291,7 +301,7 @@ class aloader:
                 current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
                 if current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                     raise ServerTimeOutException
-                if current_html.find('Ваши дальнейшие шаги') > -1:
+                elif current_html.find('Ваши дальнейшие шаги') > -1:
                     writelog(self.log, self.aid, 'Банк прервал транcфер заявки, чтобы уточнить некоторые данные '
                                                  'лично у Вас. Ожидайте звонка из Альфа-Банка', self.pid)
                     post_status(self.post_url, self.aid, 11, 'Банк прервал транcфер заявки, чтобы уточнить '
@@ -299,41 +309,48 @@ class aloader:
                                 self.log,
                                 self.bad_log)
                     raise UspehException
-                cycles_orderity += 1
-                data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
-                             'a': 'text'}
-                input_errors = p(d=self.driver, f='ps', **data4send)
-                input_errors_nulled = []
-                formatting_error = ''
-                if len(input_errors):
-                    for i, input_error in enumerate(input_errors):
-                        if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
-                            input_errors_nulled.append(input_error.replace('\n',': '))
-                    formatting_error = 'Ошибки ввода:'
-                    for i, input_error in enumerate(input_errors_nulled):
-                        formatting_error += '\n' + str(i + 1) + ') ' + input_error
-                    formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
-                nowtime = datetime.now()
-                stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
-                if formatting_error:
-                    writelog(self.bad_log, self.aid, tek_order['alfa'] + formatting_error, self.pid, nowtime)
-                    post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
+                elif current_html.find('Хотите ускорить заполнение?') > -1:
+                    elem = self.driver.find_element_by_xpath('//SPAN[@class="link__text"]'
+                                                             '[text()="Продолжить заполнение"]')
+                    wj(self.driver)
+                    elem.click()
                 else:
-                    writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново.\n'
-                            'информация для отладки:' + tek_order['alfa'] + '\n' + str(ajson) + '\n * * * \n' +
-                             str(e), self.pid, nowtime)
-                    raise TrasferErrorException
-                html_log = open(LOG_PATH + stamp + '.html', 'w')
-                html_elem = self.driver.find_element_by_xpath('//HTML')
-                html_log.write(html_elem.get_attribute('innerHTML'))
-                html_log.close()
-                self.driver.save_screenshot(LOG_PATH + stamp + '.png')
-                writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', self.pid, nowtime)
-                self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
-                                           '","_blank");')
-                self.driver.switch_to.window(self.driver.window_handles[0])
-                self.driver.close()
-                self.driver.switch_to.window(self.driver.window_handles[0])
+                    cycles_orderity += 1
+                    data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
+                                 'a': 'text'}
+                    input_errors = p(d=self.driver, f='ps', **data4send)
+                    input_errors_nulled = []
+                    formatting_error = ''
+                    if len(input_errors):
+                        for i, input_error in enumerate(input_errors):
+                            if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                                input_errors_nulled.append(input_error.replace('\n',': '))
+                        formatting_error = 'Ошибки ввода:'
+                        for i, input_error in enumerate(input_errors_nulled):
+                            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+                        formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
+                    nowtime = datetime.now()
+                    stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
+                    if formatting_error:
+                        writelog(self.bad_log, self.aid, orderity[tek_i]['alfa'] + formatting_error, self.pid, nowtime)
+                        post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
+                    else:
+                        writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново.\n'
+                                'информация для отладки:' + orderity[tek_i]['alfa'] + '\n' + str(ajson) + '\n * * * \n' +
+                                 str(e), self.pid, nowtime)
+                        raise TrasferErrorException
+                    html_log = open(LOG_PATH + stamp + '.html', 'w')
+                    html_elem = self.driver.find_element_by_xpath('//HTML')
+                    html_log.write(html_elem.get_attribute('innerHTML'))
+                    html_log.close()
+                    self.driver.save_screenshot(LOG_PATH + stamp + '.png')
+                    writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', self.pid, nowtime)
+                    self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
+                                               '","_blank");')
+                    self.driver.switch_to.window(self.driver.window_handles[0])
+                    self.driver.close()
+                    self.driver.switch_to.window(self.driver.window_handles[0])
+                    tek_i = 0
 
         if complete_orderity:
             sms_start_time = datetime.now()
