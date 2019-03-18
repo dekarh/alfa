@@ -237,7 +237,7 @@ class aloader:
                          ajson['click_id'] + str(ajson), self.pid)
                 if not tek_i:
                     post_status(self.post_url, self.aid, 1, 'Начинаем выгрузку на сервер', self.log, self.bad_log)
-                for i in range(tek_i, len(orderity) - 1):
+                for i in range(tek_i, len(orderity)):
                     order = orderity[i]
                     tek_i = i
                     # Проверяем stdin
@@ -358,25 +358,36 @@ class aloader:
             uspeh = False
             last_state = 0
             client_timeout = False
+            time.sleep(1)
             while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not server_timeout and not uspeh:
                 while datetime.now() - sms_start_time < timedelta(minutes=ALOADER_TIMEOUT) and not self.current_stdin \
                         and not server_timeout and not uspeh:
+                    time.sleep(1)
                     current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
                     if current_html.find('Неправильно введен код смс') > -1:
                         if last_state != 1:
                             last_state = 1
                             post_status(self.post_url, self.aid, 5, 'Неправильная СМС, введите заново', self.log,
                                         self.bad_log)
-                    elif current_html.find(' сек<!-- /react-text --></p>') > -1:
+                    elif current_html.find(' сек<!-- /react-text --></p>') > -1 and \
+                         current_html.find('60 сек<!-- /react-text --></p>') == -1:
                         if last_state != 2:
                             last_state = 2
                             writelog(self.log, self.aid, 'Ждем СМС', self.pid)
                             post_status(self.post_url, self.aid, 2, 'Ждем СМС', self.log, self.bad_log)
-                    elif current_html.find('Запросить пароль повторно') > -1:
+                    elif current_html.find('Запросить пароль повторно') > -1 and \
+                         current_html.find('60 сек<!-- /react-text --></p>') == -1:
                         if last_state != 3:
                             last_state = 3
                             writelog(self.log, self.aid, 'Ждем запроса на СМС', self.pid)
                             post_status(self.post_url, self.aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
+                    elif current_html.find('Вы превысили количество попыток. '
+                                           'Просьба повторить попытку через 15 минут') > -1:
+                        writelog(self.log, self.aid, 'Вы превысили количество возможных SMS за период, '
+                                                     'отправьте заявку заново', self.pid)
+                        post_status(self.post_url, self.aid, 3, 'Вы превысили количество возможных SMS за период.',
+                                                                                             self.log, self.bad_log)
+                        raise TrasferErrorException
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                         raise ServerTimeOutException
                     elif current_html.find('Ваши дальнейшие шаги:') > -1:
@@ -385,7 +396,7 @@ class aloader:
                         if last_state != 6:
                             last_state = 6
                             writelog(self.log, self.aid, 'Непонятно чего ждем, похоже aloader сбился', self.pid)
-                    time.sleep(1)
+                            raise TrasferErrorException
                     ready, x, y = check_select([sys.stdin], [], [], 0)
                     if ready:
                         self.current_stdin = sys.stdin.readline().rstrip()
@@ -422,6 +433,7 @@ class aloader:
                             elem = p(d=self.driver, f='c', **data4send)
                             wj(self.driver)
                             elem.click()
+                            time.sleep(2)
                         except Exception as e:
                             writelog(self.log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson), self.pid)
         #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
