@@ -199,13 +199,13 @@ class aloader:
                 elem = p(d=self.driver, f='c', **data4send)
                 wj(self.driver)
                 elem.click()
-        if order.get('post-wait'):
-            time.sleep(order['post-wait'])
         if order.get('post-click'):
             data4send = {'t': 'x', 's': order['post-click']}
             elem = p(d=self.driver, f='c', **data4send)
             wj(self.driver)
             elem.click()
+        if order.get('post-wait'):
+            time.sleep(order['post-wait'])
         if order.get('loaded'):
             post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
 
