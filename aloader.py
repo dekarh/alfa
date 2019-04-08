@@ -390,12 +390,18 @@ class aloader:
                         raise TrasferErrorException
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                         raise ServerTimeOutException
-                    elif current_html.find('Ваши дальнейшие шаги:') > -1:
+                    elif current_html.find('Ваши следующие шаги:') > -1:
                         raise UspehException
                     else:
                         if last_state != 6:
                             last_state = 6
                             writelog(self.log, self.aid, 'Непонятно чего ждем, похоже aloader сбился', self.pid)
+                            stamp = self.aid + '(' + str(self.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+                            html_log = open(LOG_PATH + stamp + '.html', 'w')
+                            html_elem = self.driver.find_element_by_xpath('//HTML')
+                            html_log.write(html_elem.get_attribute('innerHTML'))
+                            html_log.close()
+                            self.driver.save_screenshot(LOG_PATH + stamp + '.png')
                             raise TrasferErrorException
                     ready, x, y = check_select([sys.stdin], [], [], 0)
                     if ready:
@@ -480,7 +486,13 @@ except UspehException as e:
     writelog(al.log, al.aid, 'Заявка выгружена', al.pid)
     post_status(al.post_url, al.aid, 4, 'Заявка выгружена', al.log, al.bad_log)
 except Exception as e:
-    writelog(al.log, al.aid, 5, 'Вылетел с ошибкой: ' + str(e), al.pid)
+    writelog(al.log, al.aid, 'Вылетел с ошибкой: ' + str(e), al.pid)
     post_status(al.post_url, al.aid, 5, 'Ошибка, повторите последнее действие', al.log, al.bad_log)
+    stamp = al.aid + '(' + str(al.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+    html_log = open(LOG_PATH + stamp + '.html', 'w')
+    html_elem = al.driver.find_element_by_xpath('//HTML')
+    html_log.write(html_elem.get_attribute('innerHTML'))
+    html_log.close()
+    al.driver.save_screenshot(LOG_PATH + stamp + '.png')
 finally:
     del al
