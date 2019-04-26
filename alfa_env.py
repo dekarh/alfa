@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.12-21.03.2019'
+VERSION = 'v1.13-26.04.2019'
 
 # список очерёдности
 orderity = [
@@ -35,7 +35,7 @@ orderity = [
      'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//DIV[contains(@class,"landing-page")]'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '18%'},
     #------------------------------------------------ дубль страницы 1 ---------------------
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
+    #{'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
     # ------------------------------------------------ страница 2 ---------------------
     {'alfa': 'Серия', 'SQL': ['passport_seria'], 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
      'post-click': '//H3'},
