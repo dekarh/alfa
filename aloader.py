@@ -53,6 +53,7 @@ class aloader:
         opts = Options()
         if not DEBUG:
             opts.headless=True # Невидимый режим браузера
+            opts.add_argument("--window-size=960,1080")
         self.driver = webdriver.Chrome(DRIVER_PATH, options=opts)
         self.driver.implicitly_wait(10)
         self.driver.stop_client()

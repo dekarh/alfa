@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.13-26.04.2019'
+VERSION = 'v1.15-30.04.2019'
 
 # список очерёдности
 orderity = [
@@ -33,7 +33,7 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
     {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@placeholder="Регион работы"]',
      'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//DIV[contains(@class,"landing-page")]'},
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '18%'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
     #------------------------------------------------ дубль страницы 1 ---------------------
     #{'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
     # ------------------------------------------------ страница 2 ---------------------
@@ -139,8 +139,8 @@ orderity = [
      'check-has-menu': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"',
      'post-click': '//H3', 'post-wait': 2},
-    {'alfa': 'Выберите город и способ получения карты', 'check-delivery':'//SPAN[text()="Курьером бесплатно"]',
-     'click': '//SPAN[@class="title"][text()="Курьером бесплатно"]/..'},
+    {'alfa': 'Выберите город и способ получения карты', 'check-delivery':'//SPAN[text()="Служба доставки банка"]',
+     'click': '//SPAN[@class="title"][text()="Служба доставки банка"]/..'},
     {'alfa': 'Как быстро вам нужна карта?', 'SQL': ['delivery_time'],
      'radio-select': ['//SPAN[@class="radio__title"][text()="Сегодня"]/..',
                       '//SPAN[@class="radio__title"][text()="Через 1-3 дня"]/..'],
