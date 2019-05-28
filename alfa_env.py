@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.15-30.04.2019'
+VERSION = 'v1.17-28.05.2019'
 
 # список очерёдности
 orderity = [
@@ -33,7 +33,7 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
     {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@placeholder="Регион работы"]',
      'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//DIV[contains(@class,"landing-page")]'},
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
+    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%', 'post-wait': 3},
     #------------------------------------------------ дубль страницы 1 ---------------------
     #{'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
     # ------------------------------------------------ страница 2 ---------------------
@@ -157,7 +157,7 @@ smsity = {
     'Ждет СМС': '//P[contains(@class,"confirmation__text")][contains(text(),"сек")]',
     'Ждет запроса на СМС': '//SPAN[text()="Запросить пароль повторно"]',
     'Запросить пароль повторно': '//SPAN[@class="button__text"][text()="Запросить пароль повторно"]/../..',
-    'Ввести СМС': '//SPAN[contains(@class,"confirmation-modal__input")]//INPUT[@class="input__control"]'
+    'Ввести СМС': '//SPAN[contains(@class,"sms-sign-confirmation__input") or contains(@class,"confirmation-modal__input")]//INPUT[@class="input__control"]'
 }
 
 

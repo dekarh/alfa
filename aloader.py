@@ -266,6 +266,9 @@ class aloader:
                         elem = self.driver.find_element_by_xpath('//SPAN[@class="link__text"][text()="Продолжить заполнение"]')
                         wj(self.driver)
                         elem.click()
+                    if current_html.find('Введите&nbsp;одноразовый пароль&nbsp;из&nbsp;SMS') > -1:
+                        complete_orderity = True
+                        continue
                     self.use_order(order, ajson)
                 complete_orderity = True
             except ServerTimeOutException:
@@ -352,7 +355,6 @@ class aloader:
                     self.driver.close()
                     self.driver.switch_to.window(self.driver.window_handles[0])
                     tek_i = 0
-
         if complete_orderity:
             sms_start_time = datetime.now()
             server_timeout = False
@@ -365,19 +367,21 @@ class aloader:
                         and not server_timeout and not uspeh:
                     time.sleep(1)
                     current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
-                    if current_html.find('Неправильно введен код смс') > -1:
+                    if current_html.find('Неправильно введен код смс') > -1 or \
+                            current_html.find('Некорректные данные.\n Пожалуйста, попробуйте ещё раз.') > -1:
                         if last_state != 1:
                             last_state = 1
                             post_status(self.post_url, self.aid, 5, 'Неправильная СМС, введите заново', self.log,
                                         self.bad_log)
-                    elif current_html.find(' сек<!-- /react-text --></p>') > -1 and \
-                         current_html.find('60 сек<!-- /react-text --></p>') == -1:
+                    elif (current_html.find(' сек<!-- /react-text --></p>') > -1 or current_html.find('Запросить '
+                          'повторно можно через 0') > -1) and current_html.find('60 сек<!-- /react-text --></p>') == -1:
                         if last_state != 2:
                             last_state = 2
                             writelog(self.log, self.aid, 'Ждем СМС', self.pid)
                             post_status(self.post_url, self.aid, 2, 'Ждем СМС', self.log, self.bad_log)
-                    elif current_html.find('Запросить пароль повторно') > -1 and \
-                         current_html.find('60 сек<!-- /react-text --></p>') == -1:
+                    elif (current_html.find('Запросить пароль повторно') > -1 or current_html.find('Превышено '
+                            'количество попыток ввода пароля.\n Пожалуйста, запросите пароль повторно')) and \
+                            current_html.find('60 сек<!-- /react-text --></p>') == -1:
                         if last_state != 3:
                             last_state = 3
                             writelog(self.log, self.aid, 'Ждем запроса на СМС', self.pid)
@@ -450,8 +454,8 @@ class aloader:
                             sms_window_htm = ''
                             writelog(self.bad_log, self.aid, 'Ошибка при запросе повторной СМС: ' + str(bjson)
                                      + sms_window_htm, self.pid)
-                            post_status(self.post_url, self.aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос',
-                                        self.log, self.bad_log)
+                            post_status(self.post_url, self.aid, 5, 'Ошибка при запросе повторной СМС, повторите запрос'
+                                        , self.log, self.bad_log)
                     elif bjson['__command']['type'] == 'kill':
                         self.current_stdin = ''
                         raise KillException
