@@ -482,11 +482,15 @@ except RequiredPartnerLinkException:
 except NoDeliveryException:
     pass
 except ServerTimeOutException:
+    stamp = al.aid + '(' + str(al.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
+    html_log = open(LOG_PATH + stamp + '-timeout.html', 'w')
+    html_elem = al.driver.find_element_by_xpath('//HTML')
+    html_log.write(html_elem.get_attribute('innerHTML'))
+    html_log.close()
     writelog(al.log, al.aid, 'Таймаут, нет правильной СМС', al.pid)
     post_status(al.post_url, al.aid, 10, 'Таймаут, нет правильной СМС', al.log, al.bad_log)
 except TrasferErrorException:
-    post_status(al.post_url, al.aid, 5, 'Ошибка трансфера на сервер, отправьте заявку заново', al.log,
-                al.bad_log)
+    post_status(al.post_url, al.aid, 5, 'Ошибка трансфера на сервер, отправьте заявку заново', al.log, al.bad_log)
 except UspehException as e:
     writelog(al.log, al.aid, 'Заявка выгружена', al.pid)
     post_status(al.post_url, al.aid, 4, 'Заявка выгружена', al.log, al.bad_log)
