@@ -44,6 +44,10 @@ class UspehException(Exception):
     pass
 
 
+class RejectException(Exception):
+    pass
+
+
 class TrasferErrorException(Exception):
     pass
 
@@ -262,6 +266,8 @@ class aloader:
                                     'некоторые данные лично у Вас. Ожидайте звонка из Альфа-Банка', self.log,
                                     self.bad_log)
                         raise UspehException
+                    elif current_html.find('вы можете подать заявку повторно через 30 дней') > -1:
+                        raise RejectException
                     if current_html.find('Хотите ускорить заполнение?') > -1:
                         elem = self.driver.find_element_by_xpath('//SPAN[@class="link__text"][text()="Продолжить заполнение"]')
                         wj(self.driver)
@@ -300,6 +306,8 @@ class aloader:
                 raise
             except UspehException:
                 raise
+            except RejectException:
+                raise
             except Exception as e:
                 time.sleep(1)
                 current_html = self.driver.find_element_by_xpath('//HTML').get_attribute('innerHTML')
@@ -313,6 +321,8 @@ class aloader:
                                 self.log,
                                 self.bad_log)
                     raise UspehException
+                elif current_html.find('вы можете подать заявку повторно через 30 дней') > -1:
+                    raise RejectException
                 elif current_html.find('Хотите ускорить заполнение?') > -1:
                     elem = self.driver.find_element_by_xpath('//SPAN[@class="link__text"]'
                                                              '[text()="Продолжить заполнение"]')
@@ -373,6 +383,20 @@ class aloader:
                             last_state = 1
                             post_status(self.post_url, self.aid, 5, 'Неправильная СМС, введите заново', self.log,
                                         self.bad_log)
+                    elif current_html.find('Вы превысили количество попыток. '
+                                           'Просьба повторить попытку через 15 минут') > -1:
+                        writelog(self.log, self.aid, 'Вы превысили количество возможных SMS за период, '
+                                                     'отправьте заявку заново', self.pid)
+                        post_status(self.post_url, self.aid, 3, 'Вы превысили количество возможных SMS за период, '
+                                                      'отправьте заявку заново через 15 минут', self.log, self.bad_log)
+                        raise TrasferErrorException
+                    elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
+                        raise ServerTimeOutException
+                    elif current_html.find('вы можете подать заявку повторно через 30 дней') > -1:
+                        raise RejectException
+                    elif (current_html.find('Ваши следующие шаги') > -1) or (current_html.find('Информация по заявке')
+                                                                             > -1):
+                        raise UspehException
                     elif (current_html.find(' сек<!-- /react-text --></p>') > -1 or current_html.find('Запросить '
                           'повторно можно через 0') > -1) and current_html.find('60 сек<!-- /react-text --></p>') == -1:
                         if last_state != 2:
@@ -386,17 +410,6 @@ class aloader:
                             last_state = 3
                             writelog(self.log, self.aid, 'Ждем запроса на СМС', self.pid)
                             post_status(self.post_url, self.aid, 3, 'Ждем запроса на СМС', self.log, self.bad_log)
-                    elif current_html.find('Вы превысили количество попыток. '
-                                           'Просьба повторить попытку через 15 минут') > -1:
-                        writelog(self.log, self.aid, 'Вы превысили количество возможных SMS за период, '
-                                                     'отправьте заявку заново', self.pid)
-                        post_status(self.post_url, self.aid, 3, 'Вы превысили количество возможных SMS за период.',
-                                                                                             self.log, self.bad_log)
-                        raise TrasferErrorException
-                    elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
-                        raise ServerTimeOutException
-                    elif current_html.find('Ваши следующие шаги:') > -1:
-                        raise UspehException
                     else:
                         if last_state != 6:
                             last_state = 6
@@ -425,6 +438,7 @@ class aloader:
                                 wj(self.driver)
                             elem.send_keys(bjson['__command']['value'])
                             wj(self.driver)
+                            last_state = 0
                         except Exception as e:
                             writelog(self.log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson), self.pid)
                             #                    data4send = {'t': 'x', 's': '//DIV[@class="confirmation-modal__body"]'}
@@ -434,8 +448,8 @@ class aloader:
                             sms_window_htm = ''
                             writelog(self.bad_log, self.aid, 'Ошибка при отправлении СМС: ' + str(bjson) +
                                      sms_window_htm, self.pid)
-                            post_status(self.post_url, self.aid, 5, 'Ошибка при отправлении СМС, повторите отправку',
-                                        self.log, self.bad_log)
+                            post_status(self.post_url, self.aid, 5, 'Ошибка при отправлении СМС, повторите отправку '
+                                                                    'той же СМС', self.log, self.bad_log)
                     elif bjson['__command']['type'] == 'retry':
                         try:
                             self.current_stdin = ''
@@ -491,6 +505,11 @@ except ServerTimeOutException:
     post_status(al.post_url, al.aid, 10, 'Таймаут, нет правильной СМС', al.log, al.bad_log)
 except TrasferErrorException:
     post_status(al.post_url, al.aid, 5, 'Ошибка трансфера на сервер, отправьте заявку заново', al.log, al.bad_log)
+except RejectException:
+    writelog(al.log, al.aid, 'Заявка выгружена - отказ', al.pid)
+    post_status(al.post_url, al.aid, 4, 'Банк на данный момент не готов принять решение по выдаче кредитной карты. '
+                                        'Мы надеемся на сотрудничество в будущем: вы можете подать заявку повторно '
+                                        'через 30 дней', al.log, al.bad_log)
 except UspehException as e:
     writelog(al.log, al.aid, 'Заявка выгружена', al.pid)
     post_status(al.post_url, al.aid, 4, 'Заявка выгружена', al.log, al.bad_log)
