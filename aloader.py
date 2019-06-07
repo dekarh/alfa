@@ -15,6 +15,7 @@ import requests
 import time
 
 from alfa_env import DRIVER_PATH, LOG_FILE, BAD_TRANSACTION_LOG_FILE, LOG_PATH, orderity, writelog, CYCLES_ORDERITY
+from alfa_env import land2cc_short
 from alfa_env import post_status, ALOADER_TIMEOUT, smsity, DEBUG
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
@@ -226,7 +227,7 @@ class aloader:
         ajson = json.loads(inp)
         self.aid = ajson['click_id']
         if ajson['__landing_url']:
-            self.driver.get(url=ajson['__landing_url'] + '&afclick=' + ajson['click_id'])
+            self.driver.get(url=land2cc_short(ajson['__landing_url']) + '&afclick=' + ajson['click_id'])
         else:
             raise RequiredPartnerLinkException
         loading = ajson['__command']['type'] == 'queue'

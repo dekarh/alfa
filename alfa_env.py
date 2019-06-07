@@ -13,29 +13,29 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.21-06.06.2019'
+VERSION = 'v1.24-07.06.2019'
 
 # список очерёдности
 orderity = [
     {'alfa': 'Фамилия', 'SQL': ['passport_lastname'], 'pre-click': '//SPAN[@class="input__top"][text()="Фамилия"]/..',
-     'input': '//INPUT[@class="input__control"][@name="lastName"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
+     'input': '//INPUT[@class="input__control"][@name="lastName"]', 'post-click': '//H1'},
     {'alfa': 'Имя', 'SQL': ['passport_name'], 'pre-click': '//SPAN[@class="input__top"][text()="Имя"]/..',
-     'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
+     'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//H1'},
     {'alfa': 'Отчество', 'SQL': ['passport_middlename'], 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
-     'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
-    {'alfa': 'Пол', 'SQL': ['gender'],
-     'click-text': '//SPAN[@class="tag-button__text"][text()="',
-     'post-click': '//DIV[contains(@class,"landing-page")]'},
+     'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//H1'},
+    #{'alfa': 'Пол', 'SQL': ['gender'],
+    # 'click-text': '//SPAN[@class="tag-button__text"][text()="',
+    # 'post-click': '//H1'},
     {'alfa': 'Мобильный телефон', 'SQL': ['personal_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Мобильный телефон"]/..',
-     'input-tel': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
+     'input-tel': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H1'},
     {'alfa': 'Электронная почта', 'SQL': ['e_mail'], 'pre-click': '//SPAN[@class="input__top"][text()="Электронная почта"]/..',
-     'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//DIV[contains(@class,"landing-page")]'},
-    {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@placeholder="Регион работы"]',
-     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//DIV[contains(@class,"landing-page")]'},
+     'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//H1'},
+    {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@name="workRegion"]',
+     'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//H1'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '18%', 'post-wait': 3},
     #------------------------------------------------ дубль страницы 1 ---------------------
-    {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
+    #{'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
     # ------------------------------------------------ страница 2 ---------------------
     {'alfa': 'Серия', 'SQL': ['passport_seria'], 'input': '//INPUT[@class="input__control"][@name="passportSeries"]',
      'post-click': '//H3'},
@@ -225,3 +225,9 @@ def post_status(url, click_id, status, message, log, bad_log):
                  + str(res.status_code))
         writelog(bad_log, click_id, 'Ошибка отправки статуса "' + statuses[str(status)] + '" в postAPI, ответ - '
                  + str(res.status_code))
+
+def land2cc_short(line):
+    if line.find('anketa.alfabank.ru/land/land6/'):
+        return line.replace('anketa.alfabank.ru/land/land6/','anketa.alfabank.ru/cc-short/step1')
+    else:
+        return line
