@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.24-07.06.2019'
+VERSION = 'v1.26-26.06.2019'
 
 # список очерёдности
 orderity = [
@@ -33,6 +33,7 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="email"]', 'post-click': '//H1'},
     {'alfa': 'Регион работы', 'SQL': ['current_address_region'], 'pre-click': '//INPUT[@name="workRegion"]',
      'click-text-up': '//SPAN[@class="menu-item__control"][contains(text(),"', 'post-click': '//H1'},
+    {'alfa': 'Соглашаюсь с условиями обработки ПД', 'click': '//INPUT[@class="checkbox__control"]/..'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '18%', 'post-wait': 3},
     #------------------------------------------------ дубль страницы 1 ---------------------
     #{'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '20%'},
@@ -114,18 +115,18 @@ orderity = [
      'post-click': '//H3'},
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '80%'},
     # ------------------------------------------------ страница 5 ---------------------
-    {'alfa': 'Фамилия контактного лица', 'SQL': ['reference_lastname'],
-     'pre-click': '//SPAN[@class="input__top"][text()="Фамилия контактного лица"]/..',
-     'input': '//INPUT[@class="input__control"][@name="contactLastName"]',
-     'post-click': '//H3'},
+    #{'alfa': 'Фамилия контактного лица', 'SQL': ['reference_lastname'],
+    # 'pre-click': '//SPAN[@class="input__top"][text()="Фамилия контактного лица"]/..',
+    # 'input': '//INPUT[@class="input__control"][@name="contactLastName"]',
+    # 'post-click': '//H3'},
     {'alfa': 'Имя контактного лица', 'SQL': ['reference_name'],
      'pre-click': '//SPAN[@class="input__top"][text()="Имя контактного лица"]/..',
      'input': '//INPUT[@class="input__control"][@name="contactFirstName"]',
      'post-click': '//H3'},
-    {'alfa': 'Отчество контактного лица', 'SQL': ['reference_middlename'],
-     'pre-click': '//SPAN[@class="input__top"][text()="Отчество контактного лица"]/..',
-     'input': '//INPUT[@class="input__control"][@name="contactMiddleName"]',
-     'post-click': '//H3'},
+    #{'alfa': 'Отчество контактного лица', 'SQL': ['reference_middlename'],
+    # 'pre-click': '//SPAN[@class="input__top"][text()="Отчество контактного лица"]/..',
+    # 'input': '//INPUT[@class="input__control"][@name="contactMiddleName"]',
+    # 'post-click': '//H3'},
     {'alfa': 'Моб. телефон контактного лица', 'SQL': ['reference_contact_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Моб. телефон контактного лица"]/..',
      'input-tel': '//INPUT[@class="input__control"][@name="contactMobilePhone"]',
