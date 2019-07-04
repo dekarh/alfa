@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.26-26.06.2019'
+VERSION = 'v1.27-04.07.2019'
 
 # список очерёдности
 orderity = [

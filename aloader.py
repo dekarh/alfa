@@ -344,6 +344,29 @@ class aloader:
                         for i, input_error in enumerate(input_errors_nulled):
                             formatting_error += '\n' + str(i + 1) + ') ' + input_error
                         formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
+                        writelog(self.bad_log, self.aid, orderity[tek_i]['alfa'] + formatting_error, self.pid, nowtime)
+                        post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
+                        raise TrasferErrorException
+                    data4send = {'t': 'x', 's': '//SPAN[contains(@class,"textarea_invalid")]//SPAN[@class="textarea__sub"]/..',
+                                 'a': 'text'}
+                    input_errors = p(d=self.driver, f='ps', **data4send)
+                    input_errors_nulled = []
+                    formatting_error = ''
+                    if len(input_errors):
+                        for i, input_error in enumerate(input_errors):
+                            if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                                if input_error == 'Кем выдан\nПоле обязательно для заполнения':
+                                    input_errors_nulled.append('Возможно ошибка в Коде подразделения УФМС. '
+                                                            'Проверьте код подразделения и заполните поле "Кем выдан"')
+                                else:
+                                    input_errors_nulled.append(input_error.replace('\n',': '))
+                        formatting_error = 'Ошибки ввода:'
+                        for i, input_error in enumerate(input_errors_nulled):
+                            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+                        formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
+                        writelog(self.bad_log, self.aid, orderity[tek_i]['alfa'] + formatting_error, self.pid, nowtime)
+                        post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
+                        raise TrasferErrorException
                     nowtime = datetime.now()
                     stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
                     if formatting_error:
@@ -516,6 +539,41 @@ except UspehException as e:
     post_status(al.post_url, al.aid, 4, 'Заявка выгружена', al.log, al.bad_log)
 except Exception as e:
     writelog(al.log, al.aid, 'Вылетел с ошибкой: ' + str(e), al.pid)
+    data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
+                 'a': 'text'}
+    input_errors = p(d=al.driver, f='ps', **data4send)
+    input_errors_nulled = []
+    formatting_error = ''
+    if len(input_errors):
+        for i, input_error in enumerate(input_errors):
+            if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                input_errors_nulled.append(input_error.replace('\n', ': '))
+        formatting_error = 'Ошибки ввода:'
+        for i, input_error in enumerate(input_errors_nulled):
+            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+        formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
+    data4send = {'t': 'x', 's': '//SPAN[contains(@class,"textarea_invalid")]//SPAN[@class="textarea__sub"]/..',
+                 'a': 'text'}
+    input_errors = p(d=al.driver, f='ps', **data4send)
+    input_errors_nulled = []
+    formatting_error = ''
+    if len(input_errors):
+        for i, input_error in enumerate(input_errors):
+            if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                if input_error == 'Кем выдан\nПоле обязательно для заполнения':
+                    input_errors_nulled.append('Возможно ошибка в Коде подразделения УФМС. '
+                                               'Проверьте код подразделения и заполните поле "Кем выдан"')
+                else:
+                    input_errors_nulled.append(input_error.replace('\n', ': '))
+        formatting_error = 'Ошибки ввода:'
+        for i, input_error in enumerate(input_errors_nulled):
+            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+        formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
+    nowtime = datetime.now()
+    stamp = al.aid + '(' + str(al.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
+    if formatting_error:
+        writelog(al.bad_log, al.aid, formatting_error, al.pid, nowtime)
+        post_status(al.post_url, al.aid, 1, formatting_error, al.log, al.bad_log)
     post_status(al.post_url, al.aid, 5, 'Ошибка, повторите последнее действие', al.log, al.bad_log)
     stamp = al.aid + '(' + str(al.pid) + ')' + datetime.now().strftime("%d-%H:%M:%S")
     html_log = open(LOG_PATH + stamp + '.html', 'w')
