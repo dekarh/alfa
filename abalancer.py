@@ -159,7 +159,7 @@ channel = connection.channel()
 logging.warning(' [*] Waiting for messages. To exit press CTRL+C')
 
 channel.basic_qos(prefetch_count=1)
-channel.basic_consume(callback, queue='alfabank_100')
+channel.basic_consume('alfabank_100',callback)
 
 try:
     channel.start_consuming()

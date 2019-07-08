@@ -13,7 +13,7 @@ MAX_PROCESSES = 10
 CYCLES_ORDERITY = 1 # Количество попыток заполнения заявки
 ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после заполнения заявки
 DEBUG = False
-VERSION = 'v1.27-04.07.2019'
+VERSION = 'v1.29-09.07.2019'
 
 # список очерёдности
 orderity = [
@@ -72,11 +72,11 @@ orderity = [
     {'alfa': 'Название организации', 'SQL': ['work_organization'],
      'pre-click': '//SPAN[@class="input__top"][text()="Название организации"]/..',
      'input': '//INPUT[@class="input__control"][@name="organizationName"]',
-     'post-click': '//H3'},
+     'post-click': '//H3','post-wait': 1},
     {'alfa': 'ИНН организации', 'SQL': ['work_organization_inn'],
      'pre-click': '//SPAN[@class="input__top"][text()="ИНН организации"]/..',
      'input': '//INPUT[@class="input__control"][@name="organizationInn"]',
-     'post-click': '//H3'},
+     'post-click': '//H3', 'pre-wait': 1},
     {'alfa': 'Должность', 'SQL': ['work_position'],
      'pre-click': '//SPAN[@class="input__top"][text()="Должность"]/..',
      'input': '//INPUT[@class="input__control"][@name="workPost"]',
