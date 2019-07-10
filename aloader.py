@@ -15,8 +15,7 @@ import requests
 import time
 
 from alfa_env import DRIVER_PATH, LOG_FILE, BAD_TRANSACTION_LOG_FILE, LOG_PATH, orderity, writelog, CYCLES_ORDERITY
-from alfa_env import land2cc_short
-from alfa_env import post_status, ALOADER_TIMEOUT, smsity, DEBUG
+from alfa_env import land2cc_short, post_status, ALOADER_TIMEOUT, smsity, DEBUG, DEBUG_JSON
 from lib import read_config, lenl, s_minus, s, l, filter_rus_sp, filter_rus_minus
 from lib_scan import wj, p, chk
 
@@ -212,6 +211,7 @@ class aloader:
             elem.click()
         if order.get('post-wait'):
             time.sleep(order['post-wait'])
+#            import ipdb; ipdb.set_trace()
         if order.get('loaded'):
             post_status(self.post_url, self.aid, 1, 'передано ' + order['loaded'], self.log, self.bad_log)
 
@@ -221,9 +221,11 @@ class aloader:
         self.pid = os.getpid()
         post_api = read_config(filename='alfa.ini', section='postAPI')
         self.post_url = post_api['url']
-
-        inp = sys.stdin.readline().rstrip()
-        #ajson = json.loads('{"passport_lastname": "Якубович"}')
+        if DEBUG_JSON:
+            with open(DEBUG_JSON) as f:
+                inp = f.read()
+        else:
+            inp = sys.stdin.readline().rstrip()
         ajson = json.loads(inp)
         self.aid = ajson['click_id']
         if ajson['__landing_url']:
