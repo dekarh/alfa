@@ -15,7 +15,7 @@ ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после 
 #DEBUG_JSON = 'json.txt'
 DEBUG_JSON = ''
 DEBUG = False
-VERSION = 'v1.30-10.07.2019'
+VERSION = 'v1.31-15.07.2019'
 
 # список очерёдности
 orderity = [
@@ -25,9 +25,10 @@ orderity = [
      'input': '//INPUT[@class="input__control"][@name="firstName"]', 'post-click': '//H1'},
     {'alfa': 'Отчество', 'SQL': ['passport_middlename'], 'pre-click': '//SPAN[@class="input__top"][text()="Отчество"]/..',
      'input': '//INPUT[@class="input__control"][@name="middleName"]', 'post-click': '//H1'},
-    #{'alfa': 'Пол', 'SQL': ['gender'],
-    # 'click-text': '//SPAN[@class="tag-button__text"][text()="',
-    # 'post-click': '//H1'},
+    {'alfa': 'Пол', 'SQL': ['gender'],
+     'check-text': '//DIV[@class="radio-group__top"][text()="Пол"]/../../../..',
+     'click-text': '//SPAN[@class="tag-button__text"][text()="',
+     'post-click': '//H1'},
     {'alfa': 'Мобильный телефон', 'SQL': ['personal_phone'],
      'pre-click': '//SPAN[@class="input__top"][text()="Мобильный телефон"]/..',
      'input-tel': '//INPUT[@class="input__control"][@name="phone"]', 'post-click': '//H1'},

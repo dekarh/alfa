@@ -123,6 +123,17 @@ class aloader:
             wj(self.driver)
             if elem.get_attribute('value'):
                 return
+        # проверяем наличие если текста нет - переходим  к следующему order (пропускаем цикл)
+        if order.get('check-text'):
+            wj(self.driver)
+            current_html = self.driver.find_element_by_xpath(order['check-text']).get_attribute('innerHTML')
+            current_reactid = str(int(current_html.split('data-reactid="')[1].split('"')[0]) - 1)
+            wj(self.driver)
+            data4send = {'t': 'x', 's': '//DIV[@data-reactid="' + current_reactid + '"]'}
+            elem = p(d=self.driver, f='p', **data4send)
+            wj(self.driver)
+            if elem.get_attribute('class').find('part_hidden') > -1:
+                return
         # проверяем на наличие элемента в списке, если ни одного нет - RequiredDocumentException
         if order.get('check-with-name'):
             elems = self.driver.find_elements_by_xpath(order['check-with-name'])
