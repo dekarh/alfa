@@ -15,7 +15,7 @@ ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после 
 #DEBUG_JSON = 'json.txt'
 DEBUG_JSON = ''
 DEBUG = False
-VERSION = 'v1.31-15.07.2019'
+VERSION = 'v1.33-17.07.2019'
 
 # список очерёдности
 orderity = [
@@ -78,8 +78,8 @@ orderity = [
      'post-click': '//H1','post-wait': 1},
     {'alfa': 'ИНН организации', 'SQL': ['work_organization_inn'],
      'pre-click': '//SPAN[@class="input__top"][text()="ИНН организации"]/..',
-     'input': '//INPUT[@class="input__control"][@name="organizationInn"]',
-     'post-click': '//H1', 'pre-wait': 1},
+     'input': '//INPUT[@class="input__control"][@name="organizationInn"]', 'pre-wait-post-click': 1,
+     'post-click': '//H1', 'pre-wait': 1, 'post-wait': 1},
     {'alfa': 'Должность', 'SQL': ['work_position'],
      'pre-click': '//SPAN[@class="input__top"][text()="Должность"]/..',
      'input': '//INPUT[@class="input__control"][@name="workPost"]',

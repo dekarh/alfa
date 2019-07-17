@@ -52,6 +52,10 @@ class TrasferErrorException(Exception):
     pass
 
 
+class DecodedErrorException(Exception):
+    pass
+
+
 class aloader:
     def __init__(self): # Конструктор класса
         opts = Options()
@@ -215,6 +219,8 @@ class aloader:
                 elem = p(d=self.driver, f='c', **data4send)
                 wj(self.driver)
                 elem.click()
+        if order.get('pre-wait-post-click'):
+            time.sleep(order['pre-wait-post-click'])
         if order.get('post-click'):
             data4send = {'t': 'x', 's': order['post-click']}
             elem = p(d=self.driver, f='c', **data4send)
@@ -344,64 +350,60 @@ class aloader:
                     elem.click()
                 else:
                     cycles_orderity += 1
-                    data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
+                    data4send = {'t': 'x',
+                                 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
                                  'a': 'text'}
-                    input_errors = p(d=self.driver, f='ps', **data4send)
-                    input_errors_nulled = []
+                    input_errors = p(d=al.driver, f='ps', **data4send)
+                    errors_nulled = []
+                    data4send = {'t': 'x',
+                                 's': '//SPAN[contains(@class,"textarea_invalid")]//SPAN[@class="textarea__sub"]/..',
+                                 'a': 'text'}
+                    other_errors = p(d=al.driver, f='ps', **data4send)
                     formatting_error = ''
                     if len(input_errors):
                         for i, input_error in enumerate(input_errors):
                             if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
-                                input_errors_nulled.append(input_error.replace('\n',': '))
+                                errors_nulled.append(input_error.replace('\n', ': '))
                         formatting_error = 'Ошибки ввода:'
-                        for i, input_error in enumerate(input_errors_nulled):
+                        for i, input_error in enumerate(errors_nulled):
                             formatting_error += '\n' + str(i + 1) + ') ' + input_error
-                        formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
-                        writelog(self.bad_log, self.aid, orderity[tek_i]['alfa'] + formatting_error, self.pid, nowtime)
-                        post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
-                        raise TrasferErrorException
-                    data4send = {'t': 'x', 's': '//SPAN[contains(@class,"textarea_invalid")]//SPAN[@class="textarea__sub"]/..',
-                                 'a': 'text'}
-                    input_errors = p(d=self.driver, f='ps', **data4send)
-                    input_errors_nulled = []
-                    formatting_error = ''
+                    errors_nulled = []
                     if len(input_errors):
-                        for i, input_error in enumerate(input_errors):
-                            if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
-                                if input_error == 'Кем выдан\nПоле обязательно для заполнения':
-                                    input_errors_nulled.append('Возможно ошибка в Коде подразделения УФМС. '
-                                                            'Проверьте код подразделения и заполните поле "Кем выдан"')
+                        for i, other_error in enumerate(other_errors):
+                            if other_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                                if other_error == 'Кем выдан\nПоле обязательно для заполнения':
+                                    errors_nulled.append('Возможно ошибка в Коде подразделения УФМС. '
+                                                         'Проверьте код подразделения и заполните поле "Кем выдан"')
                                 else:
-                                    input_errors_nulled.append(input_error.replace('\n',': '))
-                        formatting_error = 'Ошибки ввода:'
-                        for i, input_error in enumerate(input_errors_nulled):
-                            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+                                    errors_nulled.append(other_error.replace('\n', ': '))
+                        for i, other_error in enumerate(errors_nulled):
+                            formatting_error += '\n' + str(i + 1) + ') ' + other_error
                         formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
-                        writelog(self.bad_log, self.aid, orderity[tek_i]['alfa'] + formatting_error, self.pid, nowtime)
-                        post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
-                        raise TrasferErrorException
                     nowtime = datetime.now()
                     stamp = self.aid + '(' + str(self.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
                     if formatting_error:
                         writelog(self.bad_log, self.aid, orderity[tek_i]['alfa'] + formatting_error, self.pid, nowtime)
                         post_status(self.post_url, self.aid, 1, formatting_error , self.log, self.bad_log)
+                        raise DecodedErrorException
                     else:
                         writelog(self.bad_log, self.aid, 'Ошибка транспорта: Отправьте заявку заново.\n'
                                 'информация для отладки:' + orderity[tek_i]['alfa'] + '\n' + str(ajson) + '\n * * * \n' +
                                  str(e), self.pid, nowtime)
+                        html_log = open(LOG_PATH + stamp + '.html', 'w')
+                        html_elem = self.driver.find_element_by_xpath('//HTML')
+                        html_log.write(html_elem.get_attribute('innerHTML'))
+                        html_log.close()
+                        self.driver.save_screenshot(LOG_PATH + stamp + '.png')
+                        writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', self.pid, nowtime)
                         raise TrasferErrorException
-                    html_log = open(LOG_PATH + stamp + '.html', 'w')
-                    html_elem = self.driver.find_element_by_xpath('//HTML')
-                    html_log.write(html_elem.get_attribute('innerHTML'))
-                    html_log.close()
-                    self.driver.save_screenshot(LOG_PATH + stamp + '.png')
-                    writelog(self.log, self.aid, 'Ошибка - см. лог ошибок, скриншот, файл html', self.pid, nowtime)
-                    self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
-                                               '","_blank");')
-                    self.driver.switch_to.window(self.driver.window_handles[0])
-                    self.driver.close()
-                    self.driver.switch_to.window(self.driver.window_handles[0])
-                    tek_i = 0
+                    # Пока выключил повторную отправку ------------------------------------------
+                    #self.driver.execute_script('window.open("' + ajson['__landing_url'] + '&afclick=' + ajson['click_id'] +
+                    #                           '","_blank");')
+                    #self.driver.switch_to.window(self.driver.window_handles[0])
+                    #self.driver.close()
+                    #self.driver.switch_to.window(self.driver.window_handles[0])
+                    #tek_i = 0
+                    #-----------------------------------------------------------------------------
         if complete_orderity:
             sms_start_time = datetime.now()
             server_timeout = False
@@ -426,7 +428,7 @@ class aloader:
                                                      'отправьте заявку заново', self.pid)
                         post_status(self.post_url, self.aid, 3, 'Вы превысили количество возможных SMS за период, '
                                                       'отправьте заявку заново через 15 минут', self.log, self.bad_log)
-                        raise TrasferErrorException
+                        raise DecodedErrorException
                     elif current_html.find('Ваша заявка на кредитную карту устала ждать :)') > -1:
                         raise ServerTimeOutException
                     elif current_html.find('вы можете подать заявку повторно через 30 дней') > -1:
@@ -550,37 +552,36 @@ except RejectException:
 except UspehException as e:
     writelog(al.log, al.aid, 'Заявка выгружена', al.pid)
     post_status(al.post_url, al.aid, 4, 'Заявка выгружена', al.log, al.bad_log)
+except DecodedErrorException: # Если уже все сообщения вывели
+    pass
 except Exception as e:
     writelog(al.log, al.aid, 'Вылетел с ошибкой: ' + str(e), al.pid)
     data4send = {'t': 'x', 's': '//SPAN[contains(@class,"input_invalid")]//SPAN[@class="input__sub"]/..',
                  'a': 'text'}
     input_errors = p(d=al.driver, f='ps', **data4send)
-    input_errors_nulled = []
-    formatting_error = ''
-    if len(input_errors):
-        for i, input_error in enumerate(input_errors):
-            if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
-                input_errors_nulled.append(input_error.replace('\n', ': '))
-        formatting_error = 'Ошибки ввода:'
-        for i, input_error in enumerate(input_errors_nulled):
-            formatting_error += '\n' + str(i + 1) + ') ' + input_error
-        formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
+    errors_nulled = []
     data4send = {'t': 'x', 's': '//SPAN[contains(@class,"textarea_invalid")]//SPAN[@class="textarea__sub"]/..',
                  'a': 'text'}
-    input_errors = p(d=al.driver, f='ps', **data4send)
-    input_errors_nulled = []
+    other_errors = p(d=al.driver, f='ps', **data4send)
     formatting_error = ''
     if len(input_errors):
         for i, input_error in enumerate(input_errors):
             if input_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
-                if input_error == 'Кем выдан\nПоле обязательно для заполнения':
-                    input_errors_nulled.append('Возможно ошибка в Коде подразделения УФМС. '
+                errors_nulled.append(input_error.replace('\n', ': '))
+        formatting_error = 'Ошибки ввода:'
+        for i, input_error in enumerate(errors_nulled):
+            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+    errors_nulled = []
+    if len(input_errors):
+        for i, other_error in enumerate(other_errors):
+            if other_error.strip(' ').strip('\n').strip(' ').strip('\n').strip(' '):
+                if other_error == 'Кем выдан\nПоле обязательно для заполнения':
+                    errors_nulled.append('Возможно ошибка в Коде подразделения УФМС. '
                                                'Проверьте код подразделения и заполните поле "Кем выдан"')
                 else:
-                    input_errors_nulled.append(input_error.replace('\n', ': '))
-        formatting_error = 'Ошибки ввода:'
-        for i, input_error in enumerate(input_errors_nulled):
-            formatting_error += '\n' + str(i + 1) + ') ' + input_error
+                    errors_nulled.append(other_error.replace('\n', ': '))
+        for i, other_error in enumerate(errors_nulled):
+            formatting_error += '\n' + str(i + 1) + ') ' + other_error
         formatting_error += '\n. Исправьте ошибки, сохраните и отправьте заявку заново'
     nowtime = datetime.now()
     stamp = al.aid + '(' + str(al.pid) + ')' + nowtime.strftime("%d-%H:%M:%S")
