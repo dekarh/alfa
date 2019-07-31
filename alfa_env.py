@@ -15,7 +15,7 @@ ALOADER_TIMEOUT = 31 # минут - время жизни aloader'а после 
 #DEBUG_JSON = 'json.txt'
 DEBUG_JSON = ''
 DEBUG = False
-VERSION = 'v1.33-17.07.2019'
+VERSION = 'v1.34-31.07.2019'
 
 # список очерёдности
 orderity = [
@@ -73,7 +73,7 @@ orderity = [
     {'alfa': 'Продолжить', 'click': '//SPAN[@class="button__text"][text()="Продолжить"]', 'loaded': '40%'},
     #------------------------------------------------ страница 3 ---------------------
     {'alfa': 'Название организации', 'SQL': ['work_organization'],
-     'pre-click': '//SPAN[@class="input__top"][text()="Название организации"]/..',
+     'pre-click': '//SPAN[@class="input__top"][text()="Название организации или ИП"]/..',
      'input': '//INPUT[@class="input__control"][@name="organizationName"]',
      'post-click': '//H1','post-wait': 1},
     {'alfa': 'ИНН организации', 'SQL': ['work_organization_inn'],
